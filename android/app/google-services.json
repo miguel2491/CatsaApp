@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "591334222041",
+    "project_id": "catsa-b4d7a",
+    "storage_bucket": "catsa-b4d7a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:591334222041:android:1b812d01e4b7ee987536c8",
+        "android_client_info": {
+          "package_name": "com.example.catsa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXGJK86929yj8xaEo_eFXQ_BDhVI_WD4Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
