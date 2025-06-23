@@ -1,40 +1,135 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import './home_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool loading = false;
+
+  Future<void> _login() async {
+    final username = emailController.text.trim();
+    final password = passwordController.text;
+
+    setState(() => loading = true);
+
+    final url = Uri.parse(
+      'http://apicatsa.catsaconcretos.mx:2543/api/Login/GetUsuario',
+    );
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'usuario': username, 'pass': password}),
+    );
+
+    setState(() => loading = false);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print(data);
+      if (data['mensaje'] == "Bienvenido") {
+        final token = data['id'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        _showError('Usuario o contraseña incorrectos');
+      }
+    } else {
+      _showError('Error del servidor (${response.statusCode})');
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+      backgroundColor: const Color(0xFF0D0F57),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/images/logo.png', height: 100),
+                const SizedBox(height: 20),
+                const Text(
+                  'Log In',
+                  style: TextStyle(color: Colors.white, fontSize: 22),
+                ),
+                const SizedBox(height: 20),
+                _buildTextField(
+                  label: 'User Name',
+                  controller: emailController,
+                ),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  label: 'Password',
+                  controller: passwordController,
+                  obscure: true,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                  ),
+                  onPressed: loading ? null : _login,
+                  child: loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Iniciar sesión'),
+                ),
+              ],
             ),
-            TextField(
-              controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              child: Text('Iniciar sesión'),
-              onPressed: () {
-                // luego harás la petición
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => HomeScreen()),
-                );
-              },
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white10,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
