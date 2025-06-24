@@ -4,17 +4,18 @@ import '../screens/page2.dart';
 import '../screens/login_screen.dart';
 
 class AppDrawer extends StatelessWidget {
+  const AppDrawer({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.red[900],
-
+      backgroundColor: Color(0xFF1C2540),
       child: ListView(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF0D0F57)),
+            decoration: BoxDecoration(color: Color(0xFFD92353)),
             margin: EdgeInsets.zero,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             child: const Align(
               alignment: Alignment.centerLeft,
               child: Text(

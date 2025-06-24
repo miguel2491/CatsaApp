@@ -79,14 +79,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Image.asset('assets/images/logo.png', height: 100),
                 const SizedBox(height: 20),
                 const Text(
-                  'Log In',
+                  'Bienvenido',
                   style: TextStyle(color: Colors.white, fontSize: 22),
                 ),
                 const SizedBox(height: 20),
-                _buildTextField(
-                  label: 'User Name',
-                  controller: emailController,
-                ),
+                _buildTextField(label: 'Usuario', controller: emailController),
                 const SizedBox(height: 10),
                 _buildTextField(
                   label: 'Password',
@@ -105,7 +102,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: loading ? null : _login,
                   child: loading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Iniciar sesión'),
+                      : const Text(
+                          'Iniciar sesión',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             ),

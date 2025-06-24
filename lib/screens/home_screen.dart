@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:catsa/core/app_color.dart';
 import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -9,7 +10,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('CatsaApp'),
         centerTitle: true,
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.secondary,
         foregroundColor: Colors.white,
       ),
       drawer: AppDrawer(),
@@ -28,7 +29,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 "Bienvenido",
-                style: TextStyle(color: Colors.white, fontSize: 20),
+                style: TextStyle(color: AppColors.accent, fontSize: 26),
               ),
             ],
           ),

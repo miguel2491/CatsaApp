@@ -1,5 +1,5 @@
 name: catsa
-description: "A new Flutter project."
+description: "CATSA CONCRETOS"
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -16,7 +16,8 @@ dependencies:
   shared_preferences: ^2.2.2
   firebase_core: ^2.27.0
   firebase_messaging: ^14.7.14
-
+  intl: ^0.18.1
+  searchable_dropdown: ^2.0.0
 
   cupertino_icons: ^1.0.8
 
