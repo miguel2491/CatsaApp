@@ -1,14 +1,15 @@
 import 'package:catsa/model/planta.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/material/dropdown.dart';
 import 'package:catsa/core/app_color.dart';
 
-class CotizacionF extends StatefulWidget {
+class Cotizacion extends StatefulWidget {
+  const Cotizacion({super.key});
+
   @override
-  _CotizacionFState createState() => _CotizacionFState();
+  _CotizacionState createState() => _CotizacionState();
 }
 
-class _CotizacionFState extends State<CotizacionF> {
+class _CotizacionState extends State<Cotizacion> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _emailController = TextEditingController();

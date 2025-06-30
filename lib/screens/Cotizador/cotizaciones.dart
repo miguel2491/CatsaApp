@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
-import '../model/cotizador.dart';
-import '../service/api.dart';
-import './Cotizador/cotizador_detail.dart';
-import './Cotizador/cotizacion.dart';
+import '../../model/cotizador.dart';
+import '../../service/api.dart';
+import 'cotizador_detail.dart';
+import 'cotizacion.dart';
 
-class Page1 extends StatelessWidget {
-  const Page1({super.key});
+class Cotizaciones extends StatelessWidget {
+  const Cotizaciones({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class Page1 extends StatelessWidget {
               // Acción al presionar el botón
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CotizacionF()),
+                MaterialPageRoute(builder: (_) => Cotizaciones()),
               );
             },
           ),

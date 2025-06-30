@@ -1,22 +1,23 @@
 import 'package:catsa/model/pedido.dart';
 import 'package:catsa/screens/Pedidos/pedido_detail.dart';
+import 'package:catsa/screens/Pedidos/pedidoForm.dart';
 import 'package:catsa/service/api.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
 import 'package:intl/intl.dart';
 
-class Page2 extends StatefulWidget {
-  const Page2({super.key});
+class Pedidos extends StatefulWidget {
+  const Pedidos({super.key});
 
   @override
-  State<Page2> createState() => _Page2State();
+  State<Pedidos> createState() => _PedidosState();
 }
 
-class _Page2State extends State<Page2> {
+class _PedidosState extends State<Pedidos> {
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
   String? _selectedPlanta;
-  List<String> _plantasDisponibles = [
+  final List<String> _plantasDisponibles = [
     'TLX1',
     'MEX1',
     'PUE1',
@@ -119,9 +120,14 @@ class _Page2State extends State<Page2> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.clear),
-            tooltip: 'Limpiar filtros',
-            onPressed: _limpiarFiltros,
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              // Acción al presionar el botón
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PedidoForm()),
+              );
+            },
           ),
         ],
       ),

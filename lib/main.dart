@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import './screens/login_screen.dart';
+import './screens/home_screen.dart';
 
 // Handler para mensajes en segundo plano
 @pragma('vm:entry-point')
@@ -30,12 +32,18 @@ void main() async {
   // Obtener token FCM para enviar mensajes dirigidos a este dispositivo
   final fcmToken = await messaging.getToken();
   print('✅ Token FCM: $fcmToken');
-
-  runApp(MyApp());
+  //Guarda Token FCM
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('fcm_token', fcmToken ?? '');
+  //Verificar el Auth Token
+  final token = prefs.getString('auth_token');
+  print(token);
+  runApp(MyApp(isLoggedIn: token != null));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -83,7 +91,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Flutter Firebase Messaging',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: LoginScreen(),
+      home: widget.isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

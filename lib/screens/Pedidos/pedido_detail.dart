@@ -10,7 +10,7 @@ class PedidoDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pedido # ${pedido.IdPedido}'),
+        title: Text('Detalle Pedido # ${pedido.IdPedido}'),
         backgroundColor: const Color(0xFF0D0F57),
         foregroundColor: Colors.white,
       ),

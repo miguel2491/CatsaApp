@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screens/page1.dart';
-import '../screens/page2.dart';
+import '../screens/Cotizador/cotizaciones.dart';
+import '../screens/Pedidos/pedidos.dart';
 import '../screens/login_screen.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -28,14 +28,14 @@ class AppDrawer extends StatelessWidget {
             title: Text('Cotizador', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => Page1()),
+              MaterialPageRoute(builder: (_) => Cotizaciones()),
             ),
           ),
           ListTile(
             title: Text('Pedidos', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => Page2()),
+              MaterialPageRoute(builder: (_) => Pedidos()),
             ),
           ),
           ListTile(

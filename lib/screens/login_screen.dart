@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text;
 
     setState(() => loading = true);
-
+    // Obtener el token FCM guardado
     final url = Uri.parse(
       'http://apicatsa.catsaconcretos.mx:2543/api/Login/GetUsuario',
     );
@@ -41,14 +41,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        _tokenUpd();
       } else {
         _showError('Usuario o contraseña incorrectos');
       }
+    } else {
+      _showError('Error del servidor (${response.statusCode})');
+    }
+  }
+
+  Future<void> _tokenUpd() async {
+    final username = emailController.text.trim();
+    final prefs = await SharedPreferences.getInstance();
+    final fcmToken = prefs.getString('fcm_token') ?? '';
+    // Obtener el token FCM guardado
+    print('✅ LOGIN Token FCM: $fcmToken');
+    final url = Uri.parse(
+      'http://apicatsa.catsaconcretos.mx:2543/api/Login/UpdTokenLogin',
+    );
+    print(username);
+    print(fcmToken);
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'usuario': username, 'fcm_token': fcmToken}),
+    );
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     } else {
       _showError('Error del servidor (${response.statusCode})');
     }
