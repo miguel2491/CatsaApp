@@ -1,7 +1,24 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/pedido.dart';
+
+//Fijas
+Future<List<Planta>> fPlantas() async {
+  final response = await http.get(
+    Uri.parse(
+      'http://apicatsa.catsaconcretos.mx:2543/api/Comercial/GetCotizaciones/2025-06-20,2025-06-24,malonso,PUE1',
+    ),
+  );
+  print(response.body);
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((json) => Planta.fromJson(json)).toList();
+  } else {
+    throw Exception('Error al cargar productos');
+  }
+}
 
 Future<List<Cotizador>> fetchProductos() async {
   final response = await http.get(

@@ -3,7 +3,6 @@ import 'package:catsa/core/app_color.dart';
 import '../../model/cotizador.dart';
 import '../../service/api.dart';
 import 'cotizador_detail.dart';
-import 'cotizacion.dart';
 
 class Cotizaciones extends StatelessWidget {
   const Cotizaciones({super.key});

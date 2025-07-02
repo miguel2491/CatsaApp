@@ -19,9 +19,9 @@ class _CotizacionState extends State<Cotizacion> {
   bool _terminosAceptados = false;
   // En tu estado
   final List<Planta> _plantas = [
-    Planta('PUE1', 'PUEBLA'),
-    Planta('TLX1', 'TLAXCALA'),
-    Planta('MEX1', 'MÉXICO'),
+    Planta(id: 'PUE1', nombre: 'PUEBLA'),
+    Planta(id: 'TLX1', nombre: 'TLAXCALA'),
+    Planta(id: 'MEX1', nombre: 'MÉXICO'),
   ];
   Planta? _selectedPlanta;
   @override
@@ -36,7 +36,7 @@ class _CotizacionState extends State<Cotizacion> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _fechaNacimiento ?? DateTime.now(),
-      firstDate: DateTime(1900),
+      firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
     if (picked != null && picked != _fechaNacimiento) {

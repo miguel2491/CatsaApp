@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import './screens/login_screen.dart';
 import './screens/home_screen.dart';
 
@@ -88,9 +89,20 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Firebase Messaging',
+      title: 'CATSA APP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations
+            .delegate, // Localizaciones de Material Design
+        GlobalWidgetsLocalizations
+            .delegate, // Localizaciones de widgets básicos
+        GlobalCupertinoLocalizations.delegate, // Para widgets de iOS (opcional)
+      ],
+      supportedLocales: const [
+        Locale('es', 'ES'), // Español
+        Locale('en', 'US'), // Inglés (backup)
+      ],
       home: widget.isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
