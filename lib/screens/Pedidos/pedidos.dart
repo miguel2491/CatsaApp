@@ -1,6 +1,6 @@
 import 'package:catsa/model/pedido.dart';
 import 'package:catsa/screens/Pedidos/pedido_detail.dart';
-import 'package:catsa/screens/Pedidos/pedidoForm.dart';
+import 'package:catsa/screens/Pedidos/pedido_form.dart';
 import 'package:catsa/service/api.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';

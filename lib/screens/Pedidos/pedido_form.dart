@@ -1,16 +1,16 @@
 import 'dart:convert';
-import 'package:file_selector/file_selector.dart';
+import 'package:catsa/model/pedido.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../widgets/dropdown_Planta.dart';
-import '../../widgets/InputButton.dart';
+import '../../widgets/dropdown_planta.dart';
+import '../../widgets/input_button.dart';
 import '../../widgets/detail.dart';
-import '../../widgets/DatePicker.dart';
-import '../../widgets/TimePicker.dart';
-import '../../widgets/Divisor.dart';
-import '../../widgets/TimeDuration.dart';
-import '../../widgets/Comentarios.dart';
-import '../../widgets/FilePickerField.dart';
+import '../../widgets/date_picker.dart';
+import '../../widgets/time_picker.dart';
+import '../../widgets/divisor.dart';
+import '../../widgets/time_duration.dart';
+import '../../widgets/comentarios.dart';
+import '../../screens/Pedidos/pedidos.dart';
 import 'package:http/http.dart' as http;
 
 class PedidoForm extends StatefulWidget {
@@ -33,6 +33,7 @@ class _PedidoFormState extends State<PedidoForm> {
   String? _selectedPro; // Variable para almacenar la planta seleccionada
   final List<String> _pro = ['C250N2014D00', 'C100N2010D00', 'C250N2010B00'];
   final TextEditingController _cotizacionController = TextEditingController();
+  final TextEditingController _pedidoController = TextEditingController();
   DateTime? _fechaEntrega;
   TimeOfDay? _horaLlegada;
   final TextEditingController _cantidadController = TextEditingController();
@@ -40,7 +41,6 @@ class _PedidoFormState extends State<PedidoForm> {
   final _tiempoDescargaController = TextEditingController();
   final _frecEnvioController = TextEditingController();
   final _comentariosController = TextEditingController();
-  XFile? _archivoAdjunto;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -73,6 +73,7 @@ class _PedidoFormState extends State<PedidoForm> {
   void dispose() {
     _cotizacionController.dispose();
     _cantidadController.dispose();
+    _pedidoController.dispose();
     super.dispose();
   }
 
@@ -107,16 +108,23 @@ class _PedidoFormState extends State<PedidoForm> {
               },
             ),
             InputWithIconButton(
+              label: 'Pedido',
+              controller: _pedidoController,
+              icon: Icons.search,
+              onPressed: () {
+                // print('Buscando: ${_cotizacionController.text}');
+              },
+            ),
+            InputWithIconButton(
               label: 'Cotización',
               controller: _cotizacionController,
               icon: Icons.search,
               onPressed: () {
-                print('Buscando: ${_cotizacionController.text}');
+                // print('Buscando: ${_cotizacionController.text}');
               },
             ),
             DetailTile(label: 'Cliente', value: ''),
             DetailTile(label: 'Obra', value: ''),
-            DetailTile(label: 'Teléfono', value: ''),
             Dropdown(
               label: 'Forma de Pago',
               selectedValue: _selectedFP,
@@ -243,7 +251,7 @@ class _PedidoFormState extends State<PedidoForm> {
               label: 'Tiempo de recorrido',
               controller: _tiempoRecorridoController,
               onChanged: (val) {
-                print('Nuevo tiempo ingresado: $val');
+                //print('Nuevo tiempo ingresado: $val');
               },
             ),
             const SizedBox(height: 12),
@@ -277,14 +285,11 @@ class _PedidoFormState extends State<PedidoForm> {
               ),
             ),
             const SizedBox(height: 12),
-            FilePickerField(
-              label: 'Adjuntar archivo (PDF o imagen)',
-              onFilePicked: (file) {
-                setState(() {
-                  _archivoAdjunto = file;
-                });
-                print('Archivo: ${file?.name}');
+            ElevatedButton(
+              onPressed: () {
+                print('¡Botón presionado!');
               },
+              child: Text('Guardar'),
             ),
             const SizedBox(height: 12),
           ],
@@ -298,16 +303,37 @@ class _PedidoFormState extends State<PedidoForm> {
     final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
 
     if (_selectedPlanta == null ||
-        _selectedFP == null ||
-        _selectedPro == null ||
-        cotizacion.isEmpty ||
+        // _selectedFP == null ||
+        // _selectedPro == null ||
+        // cotizacion.isEmpty ||
         _fechaEntrega == null ||
-        _horaLlegada == null ||
+        // _horaLlegada == null ||
         cantidad <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor completa todos los campos')),
       );
       return;
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Para evitar que el usuario lo cierre antes
+        builder: (context) {
+          // Inicia el temporizador apenas se construya el modal
+          Future.delayed(const Duration(seconds: 3), () {
+            // Cerrar el diálogo actual y redirigir
+            Navigator.of(context)
+              ..pop() // Cierra el AlertDialog
+              ..pushReplacement(
+                MaterialPageRoute(builder: (_) => const Pedidos()),
+              );
+          });
+
+          return AlertDialog(
+            title: const Text('Pedido Registrado'),
+            content: Text('El pedido fue guardado exitosamente.\n'),
+          );
+        },
+      );
     }
 
     final fechaStr = DateFormat('yyyy-MM-dd').format(_fechaEntrega!);

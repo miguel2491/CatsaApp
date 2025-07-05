@@ -11,7 +11,7 @@ Future<List<Planta>> fPlantas() async {
       'http://apicatsa.catsaconcretos.mx:2543/api/Comercial/GetCotizaciones/2025-06-20,2025-06-24,malonso,PUE1',
     ),
   );
-  print(response.body);
+
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
     return data.map((json) => Planta.fromJson(json)).toList();
@@ -26,7 +26,6 @@ Future<List<Cotizador>> fetchProductos() async {
       'http://apicatsa.catsaconcretos.mx:2543/api/Comercial/GetCotizaciones/2025-06-20,2025-06-24,malonso,PUE1',
     ),
   );
-  print(response.body);
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
     return data.map((json) => Cotizador.fromJson(json)).toList();
@@ -47,7 +46,6 @@ Future<List<Pedido>> fetchPedido({
       'http://apicatsa.catsaconcretos.mx:2543/api/Operaciones/GetAllPedidos/$planta,$inicioStr,$finStr';
 
   final response = await http.get(Uri.parse(url));
-  print(response.body);
 
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);

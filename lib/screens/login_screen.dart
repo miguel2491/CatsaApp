@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print(data);
+      //print(data);
       if (data['mensaje'] == "Bienvenido") {
         final token = data['id'];
 
@@ -66,10 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'usuario': username, 'fcm_token': fcmToken}),
     );
-    print(response.statusCode);
+    //print(response.statusCode);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-
+      //print(data);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),

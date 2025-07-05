@@ -101,9 +101,6 @@ class _CotizacionState extends State<Cotizacion> {
                     setState(() {
                       _selectedPlanta = newValue;
                     });
-                    print(
-                      'Planta seleccionada: ${newValue?.id} - ${newValue?.nombre}',
-                    );
                   },
                   validator: (value) {
                     if (value == null) {
