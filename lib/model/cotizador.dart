@@ -2,7 +2,9 @@ class Cotizador {
   final int idCotizacion;
   final String planta;
   final String noCotizacion;
+  final String noCliente;
   final String cliente;
+  final String noObra;
   final String obra;
   final String estatus;
 
@@ -10,7 +12,9 @@ class Cotizador {
     required this.idCotizacion,
     required this.planta,
     required this.noCotizacion,
+    required this.noCliente,
     required this.cliente,
+    required this.noObra,
     required this.obra,
     required this.estatus,
   });
@@ -22,7 +26,9 @@ class Cotizador {
           : int.tryParse(json['IdCotizacion']?.toString() ?? '0') ?? 0,
       planta: parseString(json['Planta']),
       noCotizacion: parseString(json['NoObra']),
+      noCliente: parseString(json['NoCliente']),
       cliente: parseString(json['Cliente']),
+      noObra: parseString(json['NoObra']),
       obra: parseString(json['Obra']),
       estatus: parseString(json['Estatus']),
     );

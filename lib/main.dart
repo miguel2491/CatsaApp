@@ -43,7 +43,6 @@ void main() async {
   await prefs.setString('fcm_token', fcmToken ?? '');
   ////Verificar el Auth Token
   final token = prefs.getString('auth_token');
-  print(token);
   runApp(MyApp(isLoggedIn: token != null));
   //runApp(MyApp());
 }

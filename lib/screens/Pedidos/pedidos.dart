@@ -1,4 +1,7 @@
 import 'package:catsa/model/pedido.dart';
+import 'package:catsa/model/planta.dart';
+import '../../widgets/dropdown_planta.dart';
+import 'package:catsa/service/api.dart' as ApiService;
 import 'package:catsa/screens/Pedidos/pedido_detail.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';
 import 'package:catsa/service/api.dart';
@@ -14,21 +17,37 @@ class Pedidos extends StatefulWidget {
 }
 
 class _PedidosState extends State<Pedidos> {
+  String? _selectedPlanta; // Variable para almacenar la planta seleccionada
+  String? _selectedPlantaNombre;
+  List<Planta> _plantas = [];
+  List<String> _plantasNombres = [];
+  bool _isLoading = true;
+
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
-  String? _selectedPlanta;
-  final List<String> _plantasDisponibles = [
-    'TLX1',
-    'MEX1',
-    'PUE1',
-  ]; // cambia según tus datos
+
   List<Pedido> _pedidos = [];
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    //_fetchFilteredPedidos(); // carga inicial
+    _loadPlantas();
+  }
+
+  Future<void> _loadPlantas() async {
+    try {
+      final plantas = await ApiService.fPlantas();
+      setState(() {
+        _plantas = plantas;
+        _plantasNombres = plantas.map((p) => p.nombre).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _fetchFilteredPedidos() async {
@@ -185,28 +204,20 @@ class _PedidosState extends State<Pedidos> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _selectedPlanta,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    hint: const Text('Planta'),
-                    items: _plantasDisponibles.map((planta) {
-                      return DropdownMenuItem(
-                        value: planta,
-                        child: Text(planta),
-                      );
-                    }).toList(),
-                    onChanged: _onPlantaSelected,
+                  Dropdown(
+                    label: 'Planta',
+                    selectedValue: _selectedPlantaNombre,
+                    items: _plantasNombres,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedPlantaNombre = newValue;
+                        final plantaSeleccionada = _plantas.firstWhere(
+                          (p) => p.nombre == newValue,
+                          orElse: () => Planta(id: '', nombre: ''),
+                        );
+                        _selectedPlanta = plantaSeleccionada.id;
+                      });
+                    },
                   ),
                 ],
               ),

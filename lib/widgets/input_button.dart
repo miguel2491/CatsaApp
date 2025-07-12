@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class InputWithIconButton extends StatelessWidget {
   final String label;
@@ -30,6 +31,8 @@ class InputWithIconButton extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: controller,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       contentPadding: const EdgeInsets.symmetric(

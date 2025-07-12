@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'package:catsa/model/pedido.dart';
+import 'package:catsa/model/cotizador.dart';
+import 'package:catsa/model/producto.dart';
+import 'package:catsa/service/api.dart' as ApiService;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../widgets/dropdown_planta.dart';
@@ -12,6 +14,7 @@ import '../../widgets/time_duration.dart';
 import '../../widgets/comentarios.dart';
 import '../../screens/Pedidos/pedidos.dart';
 import 'package:http/http.dart' as http;
+import '../../model/planta.dart';
 
 class PedidoForm extends StatefulWidget {
   const PedidoForm({super.key});
@@ -22,26 +25,28 @@ class PedidoForm extends StatefulWidget {
 
 class _PedidoFormState extends State<PedidoForm> {
   String? _selectedPlanta; // Variable para almacenar la planta seleccionada
-  final List<String> _plantas = [
-    'Planta 1',
-    'Planta 2',
-    'Planta 3',
-    'Planta 4',
-  ];
+  String? _selectedPlantaNombre;
+  List<Planta> _plantas = [];
+  List<String> _plantasNombres = [];
+  bool _isLoading = true;
+
   String? _selectedFP; // Variable para almacenar la planta seleccionada
   final List<String> _fp = ['Crédito', 'Contado', 'Débito'];
-  String? _selectedPro; // Variable para almacenar la planta seleccionada
-  final List<String> _pro = ['C250N2014D00', 'C100N2010D00', 'C250N2010B00'];
+
+  List<Producto> _productos = [];
+  Producto? _productoSeleccionado;
+
   final TextEditingController _cotizacionController = TextEditingController();
   final TextEditingController _pedidoController = TextEditingController();
   DateTime? _fechaEntrega;
   TimeOfDay? _horaLlegada;
   final TextEditingController _cantidadController = TextEditingController();
+  final TextEditingController _precioController = TextEditingController();
   final _tiempoRecorridoController = TextEditingController();
   final _tiempoDescargaController = TextEditingController();
   final _frecEnvioController = TextEditingController();
   final _comentariosController = TextEditingController();
-
+  Cotizador? _cotizacionResult;
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -70,11 +75,48 @@ class _PedidoFormState extends State<PedidoForm> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadPlantas();
+  }
+
+  @override
   void dispose() {
     _cotizacionController.dispose();
     _cantidadController.dispose();
     _pedidoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPlantas() async {
+    try {
+      final plantas = await ApiService.fPlantas();
+      setState(() {
+        _plantas = plantas;
+        _plantasNombres = plantas.map((p) => p.nombre).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadProductos(String idc) async {
+    setState(() => _isLoading = true);
+    try {
+      final productos = await ApiService.fProducto(idc);
+      print('✅ Productos cargados: ${productos.length}');
+      setState(() {
+        _productos = productos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -99,11 +141,16 @@ class _PedidoFormState extends State<PedidoForm> {
           children: [
             Dropdown(
               label: 'Planta',
-              selectedValue: _selectedPlanta,
-              items: _plantas,
+              selectedValue: _selectedPlantaNombre,
+              items: _plantasNombres,
               onChanged: (newValue) {
                 setState(() {
-                  _selectedPlanta = newValue;
+                  _selectedPlantaNombre = newValue;
+                  final plantaSeleccionada = _plantas.firstWhere(
+                    (p) => p.nombre == newValue,
+                    orElse: () => Planta(id: '', nombre: ''),
+                  );
+                  _selectedPlanta = plantaSeleccionada.id;
                 });
               },
             ),
@@ -119,12 +166,50 @@ class _PedidoFormState extends State<PedidoForm> {
               label: 'Cotización',
               controller: _cotizacionController,
               icon: Icons.search,
-              onPressed: () {
-                // print('Buscando: ${_cotizacionController.text}');
+              onPressed: () async {
+                if (_cotizacionController.text.isNotEmpty) {
+                  try {
+                    final resultado = await ApiService.fCotizacion(
+                      _cotizacionController.text,
+                    );
+                    if (resultado.isNotEmpty) {
+                      final cot = resultado.first;
+                      _cotizacionResult = cot;
+                      _loadProductos(_cotizacionController.text);
+                      print('🔄 Cargando productos...');
+                      // if (!_plantasNombres.contains(cot.planta)) {
+                      //   print('⚠️ Planta "${cot.planta}" no está en la lista.');
+                      // } else {
+                      //   setState(() {
+                      //     _selectedPlantaNombre = cot.planta;
+                      //     final plantaSeleccionada = _plantas.firstWhere(
+                      //       (p) => p.nombre == cot.planta,
+                      //       orElse: () => Planta(id: '', nombre: ''),
+                      //     );
+
+                      //     _selectedPlanta = plantaSeleccionada.id;
+                      //   });
+                      // }
+                    } else {
+                      // Maneja caso de resultado vacío
+                      print('No se encontró cotización');
+                    }
+                  } catch (e) {
+                    print('Error al obtener cotización: $e');
+                  }
+                }
               },
             ),
-            DetailTile(label: 'Cliente', value: ''),
-            DetailTile(label: 'Obra', value: ''),
+            DetailTile(
+              label: 'Cliente',
+              value:
+                  '${_cotizacionResult?.noCliente ?? ''} ${_cotizacionResult?.cliente ?? ''}',
+            ),
+            DetailTile(
+              label: 'Obra',
+              value:
+                  '${_cotizacionResult?.noObra ?? ''} ${_cotizacionResult?.obra ?? ''}',
+            ),
             Dropdown(
               label: 'Forma de Pago',
               selectedValue: _selectedFP,
@@ -138,19 +223,30 @@ class _PedidoFormState extends State<PedidoForm> {
             const SizedBox(height: 12),
             CenteredDivider(title: 'Caracteristicas del Producto'),
             const SizedBox(height: 12),
-            Dropdown(
-              label: 'Producto',
-              selectedValue: _selectedPro,
-              items: _pro,
-              onChanged: (newValue) {
+            DropdownButton<Producto>(
+              value: _productoSeleccionado,
+              hint: Text('Selecciona un producto'),
+              items: _productos.map((producto) {
+                return DropdownMenuItem<Producto>(
+                  value: producto,
+                  child: Text(
+                    producto.producto,
+                  ), // 👈 Asegúrate que `producto.producto` no esté vacío
+                );
+              }).toList(),
+              onChanged: (producto) {
                 setState(() {
-                  _selectedPro = newValue;
+                  _productoSeleccionado = producto;
+                  _precioController.text =
+                      producto?.precio.toStringAsFixed(2) ?? '';
+                  print('🟢 Seleccionado: ${producto?.producto}');
+                  print('🟢 Precio: ${producto?.precio}');
                 });
               },
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _precioController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Precio Concreto',
@@ -167,16 +263,16 @@ class _PedidoFormState extends State<PedidoForm> {
               ),
             ),
             const SizedBox(height: 12),
-            Dropdown(
-              label: 'Elemento a Colar',
-              selectedValue: _selectedPro,
-              items: _pro,
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedPro = newValue;
-                });
-              },
-            ),
+            // Dropdown(
+            //   label: 'Elemento a Colar',
+            //   selectedValue: '',
+            //   items: ['a', 'b', 'c'],
+            //   onChanged: (newValue) {
+            //     // setState(() {
+            //     //   _selectedPro = newValue;
+            //     // });
+            //   },
+            // ),
             const SizedBox(height: 12),
             TextField(
               controller: _cantidadController,
@@ -187,16 +283,16 @@ class _PedidoFormState extends State<PedidoForm> {
               ),
             ),
             const SizedBox(height: 12),
-            Dropdown(
-              label: 'Tipo Bomba',
-              selectedValue: _selectedPlanta,
-              items: _plantas,
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedPlanta = newValue;
-                });
-              },
-            ),
+            // Dropdown(
+            //   label: 'Tipo Bomba',
+            //   selectedValue: '',
+            //   items: ['a', 'b'],
+            //   onChanged: (newValue) {
+            //     // setState(() {
+            //     //   _selectedPro = newValue;
+            //     // });
+            //   },
+            // ),
             const SizedBox(height: 12),
             TextField(
               controller: _cantidadController,
@@ -210,6 +306,7 @@ class _PedidoFormState extends State<PedidoForm> {
             TextField(
               controller: _cantidadController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
+              enabled: false,
               decoration: InputDecoration(
                 labelText: 'Subtotal',
                 border: OutlineInputBorder(),
@@ -219,6 +316,7 @@ class _PedidoFormState extends State<PedidoForm> {
             TextField(
               controller: _cantidadController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
+              enabled: false,
               decoration: InputDecoration(
                 labelText: 'Total',
                 border: OutlineInputBorder(),
@@ -342,7 +440,7 @@ class _PedidoFormState extends State<PedidoForm> {
     final pedidoData = {
       "planta": _selectedPlanta,
       "formaPago": _selectedFP,
-      "producto": _selectedPro,
+      "producto": '_selectedPro',
       "cotizacion": cotizacion,
       "cantidad": cantidad,
       "fechaEntrega": fechaStr,
@@ -380,7 +478,7 @@ class _PedidoFormState extends State<PedidoForm> {
                   setState(() {
                     _selectedPlanta = null;
                     _selectedFP = null;
-                    _selectedPro = null;
+                    // _selectedPro = null;
                     _fechaEntrega = null;
                     _horaLlegada = null;
                   });

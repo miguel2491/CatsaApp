@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
+import '../core/sessiones.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,12 +36,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      //print(data);
       if (data['mensaje'] == "Bienvenido") {
         final token = data['id'];
-
+        Sessiones sess = Sessiones();
+        sess.userId = username;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
+        await prefs.setString('userApp', username);
         _tokenUpd();
       } else {
         _showError('Usuario o contraseña incorrectos');
@@ -55,21 +57,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefs = await SharedPreferences.getInstance();
     final fcmToken = prefs.getString('fcm_token') ?? '';
     // Obtener el token FCM guardado
-    print('✅ LOGIN Token FCM: $fcmToken');
     final url = Uri.parse(
       'http://apicatsa.catsaconcretos.mx:2543/api/Login/UpdTokenLogin',
     );
-    print(username);
-    print(fcmToken);
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'usuario': username, 'fcm_token': fcmToken}),
     );
-    //print(response.statusCode);
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      //print(data);
+      //final data = jsonDecode(response.body);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
