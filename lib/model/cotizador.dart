@@ -33,6 +33,10 @@ class Cotizador {
       estatus: parseString(json['Estatus']),
     );
   }
+  @override
+  String toString() {
+    return 'Cotizacion(id: $idCotizacion, planta: $planta, cliente: $cliente, nocliente: $noCliente, obra:$obra, noobra:$noObra)';
+  }
 }
 
 String parseString(dynamic value) {

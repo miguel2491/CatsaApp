@@ -5,6 +5,8 @@ class Planta {
   Planta({required this.id, required this.nombre});
 
   factory Planta.fromJson(Map<String, dynamic> json) {
-    return Planta(nombre: json['Planta'], id: json['IdPlanta']);
+    return Planta(nombre: json['Planta'] ?? '', id: json['IdPlanta'] ?? '');
   }
+  @override
+  String toString() => nombre;
 }

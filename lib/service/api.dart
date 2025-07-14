@@ -17,6 +17,7 @@ Future<List<Planta>> fPlantas() async {
   );
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
+    print('✌️ ${data}');
     return data.map((json) => Planta.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar productos');
@@ -54,7 +55,7 @@ Future<List<Cotizador>> fCotizacion(id) async {
   //final prefs = await SharedPreferences.getInstance();
   final response = await http.get(
     Uri.parse(
-      'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListProductos/${id}',
+      'http://apicatsa.catsaconcretos.mx:2543/api/App/GetCotizacion/${id}',
     ),
   );
   if (response.statusCode == 200) {

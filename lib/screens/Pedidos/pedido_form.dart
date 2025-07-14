@@ -24,10 +24,10 @@ class PedidoForm extends StatefulWidget {
 }
 
 class _PedidoFormState extends State<PedidoForm> {
-  String? _selectedPlanta; // Variable para almacenar la planta seleccionada
-  String? _selectedPlantaNombre;
+  Planta? _selectedPlanta; // Variable para almacenar la planta seleccionada
+  //String? _selectedPlantaNombre;
   List<Planta> _plantas = [];
-  List<String> _plantasNombres = [];
+  //List<String> _plantasNombres = [];
   bool _isLoading = true;
 
   String? _selectedFP; // Variable para almacenar la planta seleccionada
@@ -92,8 +92,7 @@ class _PedidoFormState extends State<PedidoForm> {
     try {
       final plantas = await ApiService.fPlantas();
       setState(() {
-        _plantas = plantas;
-        _plantasNombres = plantas.map((p) => p.nombre).toList();
+        _plantas = plantas; // ✅ Asigna la lista completa de objetos
         _isLoading = false;
       });
     } catch (e) {
@@ -107,7 +106,6 @@ class _PedidoFormState extends State<PedidoForm> {
     setState(() => _isLoading = true);
     try {
       final productos = await ApiService.fProducto(idc);
-      print('✅ Productos cargados: ${productos.length}');
       setState(() {
         _productos = productos;
         _isLoading = false;
@@ -139,18 +137,20 @@ class _PedidoFormState extends State<PedidoForm> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            Dropdown(
-              label: 'Planta',
-              selectedValue: _selectedPlantaNombre,
-              items: _plantasNombres,
-              onChanged: (newValue) {
+            DropdownButton<Planta>(
+              value: _selectedPlanta,
+              hint: Text('Selecciona una planta'),
+              isExpanded: true, // 👈 esto también ayuda si el texto es largo
+              items: _plantas.map((planta) {
+                return DropdownMenuItem<Planta>(
+                  value: planta,
+                  child: Text(planta.nombre),
+                );
+              }).toList(),
+              onChanged: (planta) {
                 setState(() {
-                  _selectedPlantaNombre = newValue;
-                  final plantaSeleccionada = _plantas.firstWhere(
-                    (p) => p.nombre == newValue,
-                    orElse: () => Planta(id: '', nombre: ''),
-                  );
-                  _selectedPlanta = plantaSeleccionada.id;
+                  _selectedPlanta = planta;
+                  print('✅ Seleccionada: ${planta?.nombre} (${planta?.id})');
                 });
               },
             ),
@@ -174,22 +174,18 @@ class _PedidoFormState extends State<PedidoForm> {
                     );
                     if (resultado.isNotEmpty) {
                       final cot = resultado.first;
-                      _cotizacionResult = cot;
-                      _loadProductos(_cotizacionController.text);
-                      print('🔄 Cargando productos...');
-                      // if (!_plantasNombres.contains(cot.planta)) {
-                      //   print('⚠️ Planta "${cot.planta}" no está en la lista.');
-                      // } else {
-                      //   setState(() {
-                      //     _selectedPlantaNombre = cot.planta;
-                      //     final plantaSeleccionada = _plantas.firstWhere(
-                      //       (p) => p.nombre == cot.planta,
-                      //       orElse: () => Planta(id: '', nombre: ''),
-                      //     );
+                      final plantaSeleccionada = _plantas.firstWhere(
+                        (p) => p.id == cot.planta,
+                        orElse: () => Planta(id: '', nombre: ''),
+                      );
+                      setState(() {
+                        _cotizacionResult = cot;
+                        _selectedPlanta = plantaSeleccionada;
+                      });
 
-                      //     _selectedPlanta = plantaSeleccionada.id;
-                      //   });
-                      // }
+                      _loadProductos(_cotizacionController.text);
+                      print('🔄 Cargando ...');
+                      print(_cotizacionResult);
                     } else {
                       // Maneja caso de resultado vacío
                       print('No se encontró cotización');
