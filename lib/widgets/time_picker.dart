@@ -14,16 +14,12 @@ class TimePickerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(
-          time != null ? time!.format(context) : 'Seleccionar hora',
-        ),
-        trailing: const Icon(Icons.access_time),
-        onTap: onTap,
-      ),
+    final timeStr = time != null ? time!.format(context) : '--:--';
+    return ListTile(
+      title: Text(label),
+      subtitle: Text(timeStr),
+      trailing: Icon(Icons.access_time),
+      onTap: onTap,
     );
   }
 }

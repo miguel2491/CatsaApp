@@ -1,6 +1,6 @@
 import 'package:catsa/model/pedido.dart';
 import 'package:catsa/model/planta.dart';
-import '../../widgets/dropdown_planta.dart';
+import '../../widgets/dropdown.dart';
 import 'package:catsa/service/api.dart' as ApiService;
 import 'package:catsa/screens/Pedidos/pedido_detail.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';

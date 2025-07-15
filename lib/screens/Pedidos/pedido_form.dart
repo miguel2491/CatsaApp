@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'package:catsa/model/cotizador.dart';
+import 'package:catsa/model/pedido.dart';
 import 'package:catsa/model/producto.dart';
 import 'package:catsa/service/api.dart' as ApiService;
+import 'package:catsa/widgets/drop_planta.dart';
+import 'package:catsa/widgets/drop_producto.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../widgets/dropdown_planta.dart';
+import '../../widgets/dropdown.dart';
 import '../../widgets/input_button.dart';
 import '../../widgets/detail.dart';
 import '../../widgets/date_picker.dart';
@@ -24,29 +27,50 @@ class PedidoForm extends StatefulWidget {
 }
 
 class _PedidoFormState extends State<PedidoForm> {
-  Planta? _selectedPlanta; // Variable para almacenar la planta seleccionada
-  //String? _selectedPlantaNombre;
+  Planta? _selectedPlanta;
   List<Planta> _plantas = [];
-  //List<String> _plantasNombres = [];
   bool _isLoading = true;
 
-  String? _selectedFP; // Variable para almacenar la planta seleccionada
-  final List<String> _fp = ['Crédito', 'Contado', 'Débito'];
+  String? _selectedFP;
+  final List<String> _fp = ['Crédito', 'Contado', 'Anticipo'];
+
+  String? _selectedTB;
+  final List<String> _tb = [
+    'Bomba Pluma',
+    'Bomba Estacionaria',
+    'Bomba Pluma Ext.',
+    'Bomba Estacionaria Ext.',
+  ];
+
+  String? _selectedElemento;
+  List<String> _elemento = [];
 
   List<Producto> _productos = [];
   Producto? _productoSeleccionado;
+
+  final TextEditingController _precioConcretoController =
+      TextEditingController();
+  final TextEditingController _cantidadController = TextEditingController();
+  final TextEditingController _precioExtraController = TextEditingController();
+  final TextEditingController _precioBombaController = TextEditingController();
+  final TextEditingController _subtotalController = TextEditingController();
+  final TextEditingController _totalController = TextEditingController();
+
+  final TextEditingController _m3viajeController = TextEditingController();
+  final _tiempoRecorridoController = TextEditingController();
+  final _tiempoDescargaController = TextEditingController();
+  final _frecEnvioController = TextEditingController();
+  final _comentariosController = TextEditingController();
+  final _recibeController = TextEditingController();
 
   final TextEditingController _cotizacionController = TextEditingController();
   final TextEditingController _pedidoController = TextEditingController();
   DateTime? _fechaEntrega;
   TimeOfDay? _horaLlegada;
-  final TextEditingController _cantidadController = TextEditingController();
-  final TextEditingController _precioController = TextEditingController();
-  final _tiempoRecorridoController = TextEditingController();
-  final _tiempoDescargaController = TextEditingController();
-  final _frecEnvioController = TextEditingController();
-  final _comentariosController = TextEditingController();
+
   Cotizador? _cotizacionResult;
+  Pedido? _pedidoResult;
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -78,6 +102,7 @@ class _PedidoFormState extends State<PedidoForm> {
   void initState() {
     super.initState();
     _loadPlantas();
+    _loadElementos();
   }
 
   @override
@@ -92,7 +117,7 @@ class _PedidoFormState extends State<PedidoForm> {
     try {
       final plantas = await ApiService.fPlantas();
       setState(() {
-        _plantas = plantas; // ✅ Asigna la lista completa de objetos
+        _plantas = plantas;
         _isLoading = false;
       });
     } catch (e) {
@@ -117,6 +142,13 @@ class _PedidoFormState extends State<PedidoForm> {
     }
   }
 
+  Future<void> _loadElementos() async {
+    final elementos = await ApiService.fElemento(); // espera el Future
+    setState(() {
+      _elemento = elementos;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,16 +169,9 @@ class _PedidoFormState extends State<PedidoForm> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            DropdownButton<Planta>(
-              value: _selectedPlanta,
-              hint: Text('Selecciona una planta'),
-              isExpanded: true, // 👈 esto también ayuda si el texto es largo
-              items: _plantas.map((planta) {
-                return DropdownMenuItem<Planta>(
-                  value: planta,
-                  child: Text(planta.nombre),
-                );
-              }).toList(),
+            PlantaDropdown(
+              plantas: _plantas,
+              selectedPlanta: _selectedPlanta,
               onChanged: (planta) {
                 setState(() {
                   _selectedPlanta = planta;
@@ -154,14 +179,125 @@ class _PedidoFormState extends State<PedidoForm> {
                 });
               },
             ),
+            const SizedBox(height: 12),
             InputWithIconButton(
               label: 'Pedido',
               controller: _pedidoController,
               icon: Icons.search,
-              onPressed: () {
-                // print('Buscando: ${_cotizacionController.text}');
+              onPressed: () async {
+                if (_pedidoController.text.isNotEmpty) {
+                  try {
+                    final resultado = await ApiService.fPedido(
+                      _pedidoController.text,
+                    );
+                    if (resultado.isNotEmpty) {
+                      final ped = resultado.first;
+                      final plantaSeleccionada = _plantas.firstWhere(
+                        (p) => p.id == ped.Planta,
+                        orElse: () => Planta(id: '', nombre: ''),
+                      );
+
+                      setState(() {
+                        _pedidoResult = ped;
+                        _selectedPlanta = plantaSeleccionada;
+                        if (_fp.contains(ped.Pago)) {
+                          _selectedFP = ped.Pago;
+                        } else {
+                          _selectedFP = null;
+                        }
+                        if (_tb.contains(ped.Bomba)) {
+                          _selectedTB = ped.Bomba;
+                        } else {
+                          _selectedTB = null;
+                        }
+                        setState(() {
+                          _selectedElemento = (ped.Elemento.trim().isNotEmpty)
+                              ? ped.Elemento.trim()
+                              : 'ALERON';
+                        });
+
+                        _precioConcretoController.text =
+                            ped.PrecioProducto.toString();
+                        _precioExtraController.text =
+                            ped.PrecioExtra.toString();
+                        _cantidadController.text = ped.Cantidad.toString();
+                        _m3viajeController.text = ped.M3Viaje.toString();
+                        _precioBombaController.text =
+                            ped.PrecioBomba.toString();
+                        _tiempoRecorridoController.text =
+                            ped.TRecorrido.toString();
+                        _tiempoDescargaController.text =
+                            ped.TDescarga.toString();
+                        _frecEnvioController.text = ped.Espaciado.toString();
+                        _comentariosController.text =
+                            ped.Observaciones.toString();
+                        _recibeController.text = ped.Asesor.toString();
+                        final fechaFormateada = DateFormat(
+                          'yyyy-MM-dd',
+                        ).format(_pedidoResult!.FechaHoraPedido);
+                        _fechaEntrega = _pedidoResult?.FechaHoraPedido;
+                        _horaLlegada = TimeOfDay.fromDateTime(
+                          _pedidoResult!.HrSalida,
+                        );
+                        _recibeController.text = _pedidoResult!.Recibe
+                            .toString();
+                        final subtotal = ApiService.calcularSubtotalPed(
+                          ped.PrecioProducto,
+                          ped.PrecioBomba,
+                          ped.Cantidad,
+                          ped.PrecioExtra,
+                        );
+                        final total = ApiService.calcularTotalPed(subtotal);
+                        _subtotalController.text = subtotal.toString();
+                        _totalController.text = total.toString();
+                        final tiempoR = ApiService.calcularTiempo(
+                          ped.TRecorrido,
+                        );
+                        final tiempoD = ApiService.calcularTiempo(
+                          ped.TDescarga,
+                        );
+                        final tiempoE = ApiService.calcularTiempo(
+                          ped.Espaciado,
+                        );
+                        _tiempoRecorridoController.text = tiempoR;
+                        _tiempoDescargaController.text = tiempoD;
+                        _frecEnvioController.text = tiempoE;
+                      });
+                      if (ped.IdCotizacion == 0) {
+                        setState(() => _isLoading = true);
+                        final productoManual = Producto(
+                          producto: ped.Producto,
+                          cantidad: ped.Cantidad,
+                          m3Bomba:
+                              0, // Si es un objeto, asegúrate de tener la clase bien modelada
+                          bomba: 0,
+                          mop: 0,
+                          precio: ped.PrecioProducto,
+                          flagVoBo: true,
+                          autoriza: 0,
+                          comentario: '-',
+                          flg: true,
+                          flagImprimir: true,
+                          mb: 0,
+                        );
+                        setState(() {
+                          _productos = [productoManual];
+                          _productoSeleccionado = productoManual;
+                        });
+                        _isLoading = false;
+                      } else {
+                        _loadProductos(ped.IdCotizacion.toString());
+                      }
+                      _cotizacionController.text = _pedidoResult!.IdCotizacion
+                          .toString();
+                    }
+                  } catch (e) {
+                    print('Error al obtener pedido: $e');
+                  }
+                }
               },
             ),
+            const SizedBox(height: 12),
             InputWithIconButton(
               label: 'Cotización',
               controller: _cotizacionController,
@@ -182,10 +318,7 @@ class _PedidoFormState extends State<PedidoForm> {
                         _cotizacionResult = cot;
                         _selectedPlanta = plantaSeleccionada;
                       });
-
                       _loadProductos(_cotizacionController.text);
-                      print('🔄 Cargando ...');
-                      print(_cotizacionResult);
                     } else {
                       // Maneja caso de resultado vacío
                       print('No se encontró cotización');
@@ -196,16 +329,19 @@ class _PedidoFormState extends State<PedidoForm> {
                 }
               },
             ),
+            const SizedBox(height: 12),
             DetailTile(
               label: 'Cliente',
               value:
-                  '${_cotizacionResult?.noCliente ?? ''} ${_cotizacionResult?.cliente ?? ''}',
+                  '${_pedidoResult?.NoCliente ?? _cotizacionResult?.noCliente ?? ''} ${_pedidoResult?.Nombre ?? _cotizacionResult?.cliente ?? ''}',
             ),
+            const SizedBox(height: 12),
             DetailTile(
               label: 'Obra',
               value:
-                  '${_cotizacionResult?.noObra ?? ''} ${_cotizacionResult?.obra ?? ''}',
+                  '${_pedidoResult?.NoObra ?? _cotizacionResult?.noObra ?? ''} ${_pedidoResult?.Obra ?? _cotizacionResult?.obra ?? ''}',
             ),
+            const SizedBox(height: 12),
             Dropdown(
               label: 'Forma de Pago',
               selectedValue: _selectedFP,
@@ -219,30 +355,23 @@ class _PedidoFormState extends State<PedidoForm> {
             const SizedBox(height: 12),
             CenteredDivider(title: 'Caracteristicas del Producto'),
             const SizedBox(height: 12),
-            DropdownButton<Producto>(
-              value: _productoSeleccionado,
-              hint: Text('Selecciona un producto'),
-              items: _productos.map((producto) {
-                return DropdownMenuItem<Producto>(
-                  value: producto,
-                  child: Text(
-                    producto.producto,
-                  ), // 👈 Asegúrate que `producto.producto` no esté vacío
-                );
-              }).toList(),
+            ProductoDropdown(
+              producto: _productos,
+              selectedProducto: _productoSeleccionado,
               onChanged: (producto) {
                 setState(() {
                   _productoSeleccionado = producto;
-                  _precioController.text =
+                  _precioConcretoController.text =
                       producto?.precio.toStringAsFixed(2) ?? '';
-                  print('🟢 Seleccionado: ${producto?.producto}');
-                  print('🟢 Precio: ${producto?.precio}');
                 });
               },
             ),
+            Text(
+              'Producto seleccionado: ${_productoSeleccionado?.producto ?? 'Ninguno'}',
+            ),
             const SizedBox(height: 12),
             TextField(
-              controller: _precioController,
+              controller: _precioConcretoController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Precio Concreto',
@@ -251,7 +380,7 @@ class _PedidoFormState extends State<PedidoForm> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _precioExtraController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Precio Extra',
@@ -259,16 +388,16 @@ class _PedidoFormState extends State<PedidoForm> {
               ),
             ),
             const SizedBox(height: 12),
-            // Dropdown(
-            //   label: 'Elemento a Colar',
-            //   selectedValue: '',
-            //   items: ['a', 'b', 'c'],
-            //   onChanged: (newValue) {
-            //     // setState(() {
-            //     //   _selectedPro = newValue;
-            //     // });
-            //   },
-            // ),
+            Dropdown(
+              label: 'Elemento a colar',
+              selectedValue: _selectedElemento,
+              items: _elemento,
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedElemento = newValue;
+                });
+              },
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _cantidadController,
@@ -279,19 +408,19 @@ class _PedidoFormState extends State<PedidoForm> {
               ),
             ),
             const SizedBox(height: 12),
-            // Dropdown(
-            //   label: 'Tipo Bomba',
-            //   selectedValue: '',
-            //   items: ['a', 'b'],
-            //   onChanged: (newValue) {
-            //     // setState(() {
-            //     //   _selectedPro = newValue;
-            //     // });
-            //   },
-            // ),
+            Dropdown(
+              label: 'Tipo Bomba',
+              selectedValue: _selectedTB,
+              items: _tb,
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedTB = newValue;
+                });
+              },
+            ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _precioBombaController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Precio Bombeo',
@@ -300,7 +429,7 @@ class _PedidoFormState extends State<PedidoForm> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _subtotalController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               enabled: false,
               decoration: InputDecoration(
@@ -310,7 +439,7 @@ class _PedidoFormState extends State<PedidoForm> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _totalController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               enabled: false,
               decoration: InputDecoration(
@@ -333,7 +462,7 @@ class _PedidoFormState extends State<PedidoForm> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _cantidadController,
+              controller: _m3viajeController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'M3 Viaje',
@@ -370,8 +499,9 @@ class _PedidoFormState extends State<PedidoForm> {
               controller: _comentariosController,
               hintText: 'Escribe tus observaciones aquí...',
             ),
+            const SizedBox(height: 12),
             TextField(
-              controller: _comentariosController,
+              controller: _recibeController,
               keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
                 labelText: 'Recibe en Obra',

@@ -43,6 +43,16 @@ class Producto {
       mb: parseDouble(json['MB']),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Producto &&
+          runtimeType == other.runtimeType &&
+          producto == other.producto;
+
+  @override
+  int get hashCode => producto.hashCode;
 }
 
 String parseString(dynamic value) {
