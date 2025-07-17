@@ -56,11 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Center(
           child: Column(
             children: [
-              Image.asset('assets/images/logo.png', height: 100),
-              const SizedBox(height: 16),
+              const SizedBox(height: 150),
+              Transform.rotate(
+                angle: 0.5, // en radianes
+                child: Image.asset('assets/images/logo.png', height: 250),
+              ),
               const Text(
                 "Bienvenido",
-                style: TextStyle(color: AppColors.accent, fontSize: 26),
+                style: TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -74,11 +81,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.brain),
+            icon: FaIcon(FontAwesomeIcons.file),
             label: 'Cotización',
           ),
           BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.chartPie),
+            icon: FaIcon(FontAwesomeIcons.shoppingBag),
             label: 'Pedidos',
           ),
         ],

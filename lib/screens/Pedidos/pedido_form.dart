@@ -27,6 +27,8 @@ class PedidoForm extends StatefulWidget {
 }
 
 class _PedidoFormState extends State<PedidoForm> {
+  String estado = "N";
+
   Planta? _selectedPlanta;
   List<Planta> _plantas = [];
   bool _isLoading = true;
@@ -128,11 +130,21 @@ class _PedidoFormState extends State<PedidoForm> {
   }
 
   Future<void> _loadProductos(String idc) async {
+    setState(() {
+      _isLoading = true;
+      _productos = [];
+      _productoSeleccionado = null; // 🔁 Resetea la selección anterior
+    });
     setState(() => _isLoading = true);
+
     try {
       final productos = await ApiService.fProducto(idc);
       setState(() {
         _productos = productos;
+        if (_productos.isNotEmpty) {
+          //_productoSeleccionado = _productos.first;
+          _precioConcretoController.text = '0.00';
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -175,7 +187,6 @@ class _PedidoFormState extends State<PedidoForm> {
               onChanged: (planta) {
                 setState(() {
                   _selectedPlanta = planta;
-                  print('✅ Seleccionada: ${planta?.nombre} (${planta?.id})');
                 });
               },
             ),
@@ -196,8 +207,8 @@ class _PedidoFormState extends State<PedidoForm> {
                         (p) => p.id == ped.Planta,
                         orElse: () => Planta(id: '', nombre: ''),
                       );
-
                       setState(() {
+                        estado = "A";
                         _pedidoResult = ped;
                         _selectedPlanta = plantaSeleccionada;
                         if (_fp.contains(ped.Pago)) {
@@ -215,7 +226,6 @@ class _PedidoFormState extends State<PedidoForm> {
                               ? ped.Elemento.trim()
                               : 'ALERON';
                         });
-
                         _precioConcretoController.text =
                             ped.PrecioProducto.toString();
                         _precioExtraController.text =
@@ -237,7 +247,7 @@ class _PedidoFormState extends State<PedidoForm> {
                         ).format(_pedidoResult!.FechaHoraPedido);
                         _fechaEntrega = _pedidoResult?.FechaHoraPedido;
                         _horaLlegada = TimeOfDay.fromDateTime(
-                          _pedidoResult!.HrSalida,
+                          _pedidoResult!.FechaHoraPedido,
                         );
                         _recibeController.text = _pedidoResult!.Recibe
                             .toString();
@@ -525,7 +535,7 @@ class _PedidoFormState extends State<PedidoForm> {
   void _guardarPedido() async {
     final cotizacion = _cotizacionController.text;
     final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
-
+    print("☠️ $estado");
     if (_selectedPlanta == null ||
         // _selectedFP == null ||
         // _selectedPro == null ||
