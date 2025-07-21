@@ -1,16 +1,18 @@
+import 'package:catsa/model/clientes.dart';
 import 'package:catsa/model/cotizador.dart';
+import 'package:catsa/model/extras.dart';
+import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/producto.dart';
 import 'package:catsa/model/productoC.dart';
-import 'package:catsa/service/api.dart' as ApiService;
+import 'package:catsa/service/api.dart' as api_service;
 import 'package:catsa/widgets/accordeon.dart';
+import 'package:catsa/widgets/accordeon_extra.dart';
 import 'package:catsa/widgets/detalle_producto.dart';
 import 'package:catsa/widgets/divisor.dart';
 import 'package:catsa/widgets/dropdown.dart';
 import 'package:catsa/widgets/input_button.dart';
-import 'package:catsa/widgets/producto_cotizado.dart';
 import 'package:flutter/material.dart';
-import 'package:catsa/core/app_color.dart';
 
 class Cotizacion extends StatefulWidget {
   const Cotizacion({super.key});
@@ -23,12 +25,23 @@ class _CotizacionState extends State<Cotizacion> {
   Planta? _selectedPlanta;
   List<Planta> _plantas = [];
   bool _isLoading = true;
+  List<Clientes> _clientes = [];
+  List<Obras> _obras = [];
+  List<Producto> _productos = [];
+  List<Producto> _productosSeleccionados = [];
+  List<Producto> productos = [];
   //----------------------------------------------------------------------------
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final TextEditingController _cotizacionController = TextEditingController();
+  final TextEditingController _obraController = TextEditingController();
+  final TextEditingController _clienteController = TextEditingController();
+  final TextEditingController _clienteSeleccionado = TextEditingController();
+  final TextEditingController _obraSeleccionado = TextEditingController();
+  final TextEditingController _productoSeleccionado = TextEditingController();
+
   String? _selectedF;
   final List<String> _f = [
     'Base de Datos',
@@ -51,55 +64,20 @@ class _CotizacionState extends State<Cotizacion> {
   String? _selectedTC;
   final List<String> _tc = ['Constructor', 'Revendedor'];
 
-  List<Producto> productos = [];
-
-  final List<ProductoC> _todosLosProductos = [
-    ProductoC(producto: 'Concreto premezclado', precio: 0),
-    ProductoC(producto: 'Grava 3/4', precio: 0),
-    ProductoC(producto: 'Arena fina', precio: 0),
-    ProductoC(producto: 'Cemento Portland', precio: 0),
-    ProductoC(producto: 'Concreto premezclado', precio: 0),
-    ProductoC(producto: 'Grava 3/4', precio: 0),
-    ProductoC(producto: 'Arena fina', precio: 0),
-    ProductoC(producto: 'Cemento Portland', precio: 0),
-    ProductoC(producto: 'Concreto premezclado', precio: 0),
-    ProductoC(producto: 'Grava 3/4', precio: 0),
-    ProductoC(producto: 'Arena fina', precio: 0),
-    ProductoC(producto: 'Cemento Portland', precio: 0),
-    ProductoC(producto: 'Concreto premezclado', precio: 0),
-    ProductoC(producto: 'Grava 3/4', precio: 0),
-    ProductoC(producto: 'Arena fina', precio: 0),
-    ProductoC(producto: 'Cemento Portland', precio: 0),
-  ]; // Lista original (API o local)
-  List<ProductoC> _productosSeleccionados = [];
-
+  List<Extras> extras = [];
   //----------------------------------------------------------------------------
   Cotizador? _cotizacionResult;
+  String? _clienteResult;
+  String? _obraResult;
   DateTime? _fechaNacimiento;
   double _valorSlider = 5;
-  bool _terminosAceptados = false;
+  bool _terminos_aceptados = false;
 
   //------------------------------------------------------------------------------
   @override
   void initState() {
     super.initState();
     _loadPlantas();
-    productos = [
-      Producto(
-        producto: 'C300N',
-        cantidad: 5.0,
-        m3Bomba: 1.0,
-        bomba: 500,
-        mop: 120,
-        precio: 1500,
-        flagVoBo: true,
-        autoriza: 1,
-        comentario: 'Prueba',
-        flg: false,
-        flagImprimir: true,
-        mb: 5.5,
-      ),
-    ];
   }
 
   @override
@@ -112,7 +90,7 @@ class _CotizacionState extends State<Cotizacion> {
 
   Future<void> _loadPlantas() async {
     try {
-      final plantas = await ApiService.fPlantas();
+      final plantas = await api_service.fPlantas();
       setState(() {
         _plantas = plantas;
         _isLoading = false;
@@ -124,27 +102,57 @@ class _CotizacionState extends State<Cotizacion> {
     }
   }
 
-  Future<void> _seleccionarFecha(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _fechaNacimiento ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != _fechaNacimiento) {
-      setState(() => _fechaNacimiento = picked);
+  Future<void> _loadClientes() async {
+    try {
+      final clientes = await api_service.fClientes(_selectedPlanta?.id);
+      setState(() {
+        _clientes = clientes;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadObras() async {
+    try {
+      final obras = await api_service.fObras(_selectedPlanta?.id);
+      setState(() {
+        _obras = obras;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadProductos() async {
+    try {
+      final productos = await api_service.fProductosPlanta(_selectedPlanta?.id);
+      setState(() {
+        _productos = productos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   void _enviarFormulario() {
-    if (_formKey.currentState!.validate() && _terminosAceptados) {
+    if (_formKey.currentState!.validate() && _terminos_aceptados) {
       // Procesar los datos del formulario
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Formulario enviado: ${_nombreController.text}'),
         ),
       );
-    } else if (!_terminosAceptados) {
+    } else if (!_terminos_aceptados) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Debes aceptar los términos y condiciones'),
@@ -154,58 +162,96 @@ class _CotizacionState extends State<Cotizacion> {
   }
 
   void _mostrarSelectorDeProductos() async {
-    final List<Producto> seleccionados = await showDialog(
+    final seleccionados = await showModalBottomSheet<List<Producto>>(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        Set<String> seleccionTemp = _productosSeleccionados
+        List<Producto> productosFiltrados = [..._productos];
+        List<String> seleccionTemp = _productosSeleccionados
             .map((p) => p.producto)
-            .toSet();
-        return AlertDialog(
-          title: const Text('Selecciona productos'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              children: _todosLosProductos.map((producto) {
-                final isSelected = seleccionTemp.contains(producto.producto);
-                return CheckboxListTile(
-                  title: Text(producto.producto),
-                  value: isSelected,
-                  onChanged: (bool? checked) {
-                    setState(() {
-                      if (checked == true) {
-                        print(producto.producto);
-                        seleccionTemp.add(producto.producto);
-                      } else {
-                        seleccionTemp.remove(producto.producto);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancelar'),
-              onPressed: () => Navigator.pop(context, _productosSeleccionados),
-            ),
-            ElevatedButton(
-              child: const Text('Aceptar'),
-              onPressed: () {
-                final seleccionFinal = _todosLosProductos
-                    .where((p) => seleccionTemp.contains(p.producto))
-                    .toList();
-                Navigator.pop(context, seleccionFinal);
-              },
-            ),
-          ],
+            .toList(); // Para mantener consistencia
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Buscar producto',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      setModalState(() {
+                        productosFiltrados = _productos
+                            .where(
+                              (p) => p.producto.toLowerCase().contains(
+                                value.toLowerCase(),
+                              ),
+                            )
+                            .toList();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 300,
+                    child: Expanded(
+                      child: ListView(
+                        children: productosFiltrados.map((producto) {
+                          final isSelected = seleccionTemp.contains(
+                            producto.producto,
+                          );
+                          return CheckboxListTile(
+                            title: Text(producto.producto),
+                            value: isSelected,
+                            onChanged: (bool? checked) {
+                              print('☠️ $producto.producto');
+                              setModalState(() {
+                                if (checked == true) {
+                                  seleccionTemp.add(producto.producto);
+                                  final seleccionFinal = _productos
+                                      .where(
+                                        (p) =>
+                                            seleccionTemp.contains(p.producto),
+                                      )
+                                      .toList();
+                                  Navigator.pop(context, seleccionFinal);
+                                } else {
+                                  seleccionTemp.remove(producto.producto);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
 
-    setState(() {
-      _productosSeleccionados = seleccionados.cast<ProductoC>();
-    });
+    if (seleccionados != null) {
+      setState(() {
+        _productosSeleccionados = seleccionados;
+      });
+    }
+    if (seleccionados != null) {
+      setState(() {
+        _productosSeleccionados = seleccionados;
+      });
+    }
   }
 
   void _mostrarExtras() async {
@@ -287,6 +333,14 @@ class _CotizacionState extends State<Cotizacion> {
               onPressed: () {
                 print('Tipo seleccionado: $selectedDropdown');
                 print('Cantidad ingresada: $inputValue');
+                final nuevoExtra = Extras(
+                  concepto: selectedDropdown,
+                  cantidad: 5,
+                  descripcion: "-",
+                );
+                setState(() {
+                  extras.add(nuevoExtra);
+                });
                 Navigator.pop(context);
               },
               child: const Text('Aceptar'),
@@ -305,6 +359,12 @@ class _CotizacionState extends State<Cotizacion> {
         backgroundColor: const Color(0xFF0D0F57),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              _enviarFormulario();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () {
@@ -338,6 +398,9 @@ class _CotizacionState extends State<Cotizacion> {
                   onChanged: (Planta? newValue) {
                     setState(() {
                       _selectedPlanta = newValue;
+                      _loadClientes();
+                      _loadObras();
+                      _loadProductos();
                     });
                   },
                   validator: (value) {
@@ -355,7 +418,7 @@ class _CotizacionState extends State<Cotizacion> {
                   onPressed: () async {
                     if (_cotizacionController.text.isNotEmpty) {
                       try {
-                        final resultado = await ApiService.fCotizacion(
+                        final resultado = await api_service.fCotizacion(
                           _cotizacionController.text,
                         );
                         if (resultado.isNotEmpty) {
@@ -364,8 +427,11 @@ class _CotizacionState extends State<Cotizacion> {
                             (p) => p.id == cot.planta,
                             orElse: () => Planta(id: '', nombre: ''),
                           );
+                          print('☠️💀☠️ $cot');
                           setState(() {
                             _cotizacionResult = cot;
+                            _clienteController.text = cot.cliente;
+                            _obraController.text = cot.obra;
                             _selectedPlanta = plantaSeleccionada;
                           });
                         } else {
@@ -381,63 +447,155 @@ class _CotizacionState extends State<Cotizacion> {
                 const SizedBox(height: 20),
                 InputWithIconButton(
                   label: 'Cliente',
-                  controller: _cotizacionController,
+                  controller: _clienteController,
                   icon: Icons.search,
                   onPressed: () async {
-                    if (_cotizacionController.text.isNotEmpty) {
-                      try {
-                        final resultado = await ApiService.fCotizacion(
-                          _cotizacionController.text,
+                    final Clientes? clienteSeleccionado =
+                        await showDialog<Clientes>(
+                          context: context,
+                          builder: (context) {
+                            String filtro = '';
+                            List<Clientes> filtrados = _clientes;
+
+                            return StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return AlertDialog(
+                                  title: const Text('Buscar Cliente'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Buscar...',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        onChanged: (value) {
+                                          setStateDialog(() {
+                                            filtro = value;
+                                            filtrados = _clientes
+                                                .where(
+                                                  (c) => c.nombre
+                                                      .toLowerCase()
+                                                      .contains(
+                                                        filtro.toLowerCase(),
+                                                      ),
+                                                )
+                                                .toList();
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 10),
+                                      SizedBox(
+                                        height: 200,
+                                        width: double.maxFinite,
+                                        child: ListView.builder(
+                                          itemCount: filtrados.length,
+                                          itemBuilder: (context, index) {
+                                            final cliente = filtrados[index];
+                                            return ListTile(
+                                              title: Text(cliente.nombre),
+                                              onTap: () => Navigator.pop(
+                                                context,
+                                                cliente,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      child: const Text('Cerrar'),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                         );
-                        if (resultado.isNotEmpty) {
-                          final cot = resultado.first;
-                          final plantaSeleccionada = _plantas.firstWhere(
-                            (p) => p.id == cot.planta,
-                            orElse: () => Planta(id: '', nombre: ''),
-                          );
-                          setState(() {
-                            _cotizacionResult = cot;
-                            _selectedPlanta = plantaSeleccionada;
-                          });
-                        } else {
-                          // Maneja caso de resultado vacío
-                          //print('No se encontró cotización');
-                        }
-                      } catch (e) {
-                        //print('Error al obtener cotización: $e');
-                      }
+
+                    if (clienteSeleccionado != null) {
+                      setState(() {
+                        _clienteController.text = clienteSeleccionado.nombre;
+                        //_clienteSeleccionado.text = clienteSeleccionado.toString(); // opcional
+                      });
                     }
                   },
                 ),
-                Text('Cliente seleccionado'),
+                Text('Cliente seleccionado:'),
                 const SizedBox(height: 0),
                 InputWithIconButton(
                   label: 'Obra',
-                  controller: _cotizacionController,
+                  controller: _obraController,
                   icon: Icons.search,
                   onPressed: () async {
-                    if (_cotizacionController.text.isNotEmpty) {
-                      try {
-                        final resultado = await ApiService.fCotizacion(
-                          _cotizacionController.text,
+                    final Obras? obraSeleccionada = await showDialog<Obras>(
+                      context: context,
+                      builder: (context) {
+                        String filtro = '';
+                        List<Obras> filtrados = _obras;
+                        return StatefulBuilder(
+                          builder: (context, setStateDialog) {
+                            return AlertDialog(
+                              title: const Text('Buscar Obra'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    decoration: const InputDecoration(
+                                      hintText: 'Buscar...',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onChanged: (value) {
+                                      setStateDialog(() {
+                                        filtro = value;
+                                        filtrados = _obras
+                                            .where(
+                                              (c) =>
+                                                  c.obra.toLowerCase().contains(
+                                                    filtro.toLowerCase(),
+                                                  ),
+                                            )
+                                            .toList();
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    height: 200,
+                                    width: double.maxFinite,
+                                    child: ListView.builder(
+                                      itemCount: filtrados.length,
+                                      itemBuilder: (context, index) {
+                                        final obras = filtrados[index];
+                                        return ListTile(
+                                          title: Text(obras.obra),
+                                          onTap: () =>
+                                              Navigator.pop(context, obras),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  child: const Text('Cerrar'),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            );
+                          },
                         );
-                        if (resultado.isNotEmpty) {
-                          final cot = resultado.first;
-                          final plantaSeleccionada = _plantas.firstWhere(
-                            (p) => p.id == cot.planta,
-                            orElse: () => Planta(id: '', nombre: ''),
-                          );
-                          setState(() {
-                            _cotizacionResult = cot;
-                            _selectedPlanta = plantaSeleccionada;
-                          });
-                        } else {
-                          // Maneja caso de resultado vacío
-                          //print('No se encontró cotización');
-                        }
-                      } catch (e) {
-                        //print('Error al obtener cotización: $e');
-                      }
+                      },
+                    );
+
+                    if (obraSeleccionada != null) {
+                      setState(() {
+                        _obraController.text = obraSeleccionada.obra;
+                      });
                     }
                   },
                 ),
@@ -487,33 +645,26 @@ class _CotizacionState extends State<Cotizacion> {
                       true, // Se adapta al contenido, no se expande infinito
                   physics:
                       const NeverScrollableScrollPhysics(), // Evita scroll propio
-                  itemCount: productos.length,
+                  itemCount: _productosSeleccionados.length,
                   itemBuilder: (context, index) {
-                    final producto = productos[index];
-                    return ProductoAccordion(
-                      producto: producto,
-                      onDetallePressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                DetalleProductoWidget(producto: producto),
-                          ),
-                        );
-                      },
+                    final producto = _productosSeleccionados[index];
+                    final isSelected = _productosSeleccionados.any(
+                      (p) => p.producto == producto.producto,
                     );
-                  },
-                ),
-                ListView.builder(
-                  shrinkWrap:
-                      true, // Se adapta al contenido, no se expande infinito
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Evita scroll propio
-                  itemCount: productos.length,
-                  itemBuilder: (context, index) {
-                    final producto = productos[index];
                     return ProductoAccordion(
                       producto: producto,
+                      isSelected: isSelected,
+                      onToggleSeleccion: () {
+                        setState(() {
+                          if (isSelected) {
+                            _productosSeleccionados.removeWhere(
+                              (p) => p.producto == producto.producto,
+                            );
+                          } else {
+                            _productosSeleccionados.add(producto);
+                          }
+                        });
+                      },
                       onDetallePressed: () {
                         Navigator.push(
                           context,
@@ -532,17 +683,42 @@ class _CotizacionState extends State<Cotizacion> {
                   label: const Text('Agregar Extras'),
                   onPressed: _mostrarExtras,
                 ),
-
-                // Botón de enviar
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  onPressed: _enviarFormulario,
-                  child: const Text('ENVIAR FORMULARIO'),
+                ListView.builder(
+                  shrinkWrap:
+                      true, // Se adapta al contenido, no se expande infinito
+                  physics:
+                      const NeverScrollableScrollPhysics(), // Evita scroll propio
+                  itemCount: extras.length,
+                  itemBuilder: (context, index) {
+                    final extra = extras[index];
+                    return ExtraAccordion(
+                      extra: extra,
+                      onDetallePressed: () {
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (_) =>
+                        //         DetalleProductoWidget(producto: extra),
+                        //   ),
+                        // );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+            ),
+            onPressed: _enviarFormulario,
+            child: const Text('ENVIAR FORMULARIO'),
           ),
         ),
       ),

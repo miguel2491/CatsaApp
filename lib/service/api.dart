@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:catsa/model/clientes.dart';
+import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/producto.dart';
 import 'package:http/http.dart' as http;
 import 'package:catsa/model/planta.dart';
@@ -17,7 +19,6 @@ Future<List<Planta>> fPlantas() async {
   );
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
-    print('✌️ ${data}');
     return data.map((json) => Planta.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar productos');
@@ -26,27 +27,23 @@ Future<List<Planta>> fPlantas() async {
 
 Future<List<Producto>> fProducto(idCot) async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final userApp = prefs.getString('userApp');
+    //final prefs = await SharedPreferences.getInstance();
+    //final userApp = prefs.getString('userApp');
 
     final response = await http.get(
       Uri.parse(
         'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListProductos/$idCot',
       ),
     );
-    print('🌐 Status: ${response.statusCode}');
-    print('📦 Body: ${response.body}');
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      print('📊 Productos recibidos: ${data.length}');
       return data.map((json) => Producto.fromJson(json)).toList();
     } else {
       throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
     }
   } catch (e, stacktrace) {
-    print('❌ Error inesperado en fProducto: $e');
-    print(stacktrace);
+    //print('❌ Error inesperado en fProducto: $e');
     return [];
   }
 }
@@ -155,10 +152,72 @@ Future<List<Pedido>> fPedido(id) async {
   );
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
-    print('💀☠️👻 ${data}');
     return data.map((json) => Pedido.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar productos');
+  }
+}
+
+//COTIZADOR
+Future<List<Clientes>> fClientes(planta) async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListCliente/$planta',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((json) => Clientes.fromJson(json)).toList();
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e, stacktrace) {
+    return [];
+  }
+}
+
+Future<List<Obras>> fObras(planta) async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListObra/$planta',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((json) => Obras.fromJson(json)).toList();
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e, stacktrace) {
+    return [];
+  }
+}
+
+Future<List<Producto>> fProductosPlanta(planta) async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListProductosPlanta/$planta',
+      ),
+    );
+    print('🌐 Status: ${response.statusCode}');
+    print('📦 Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      print('🎋🎁🩻 Productos recibidos: ${data.length}');
+      return data.map((json) => Producto.fromJson(json)).toList();
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e, stacktrace) {
+    print('❌ Error inesperado en fPlanta: $e');
+    print(stacktrace);
+    return [];
   }
 }
 

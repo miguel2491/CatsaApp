@@ -9,6 +9,7 @@ class DetalleProductoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🩻 $producto');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

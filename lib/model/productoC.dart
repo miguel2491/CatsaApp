@@ -1,13 +1,45 @@
+import 'dart:ffi';
+
 class ProductoC {
   final String producto;
-  final double precio;
+  final String descripcion;
+  final String familia;
+  final int resistencia;
+  final String edad;
+  final int tma;
+  final int revenimiento;
+  final String colocacion;
+  final String variante;
+  final double costo;
+  final int flg_col;
 
-  ProductoC({required this.producto, required this.precio});
+  ProductoC({
+    required this.producto,
+    required this.descripcion,
+    required this.familia,
+    required this.resistencia,
+    required this.edad,
+    required this.tma,
+    required this.revenimiento,
+    required this.colocacion,
+    required this.variante,
+    required this.costo,
+    required this.flg_col,
+  });
 
   factory ProductoC.fromJson(Map<String, dynamic> json) {
     return ProductoC(
       producto: parseString(json['Producto']),
-      precio: parseDouble(json['Precio']),
+      descripcion: parseString(json['Descripcion']),
+      familia: parseString(json['Familia']),
+      resistencia: parseInt(json['Resistencia']),
+      edad: parseString(json['Edad']),
+      tma: parseInt(json['TMA']),
+      revenimiento: parseInt(json['Revenimiento']),
+      colocacion: parseString(json['Colocacion']),
+      variante: parseString(json['Variante']),
+      costo: parseDouble(json['COSTO']),
+      flg_col: parseInt(json['FlgCol']),
     );
   }
 
