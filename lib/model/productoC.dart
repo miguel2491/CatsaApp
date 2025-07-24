@@ -10,6 +10,12 @@ class ProductoC {
   final int revenimiento;
   final String colocacion;
   final String variante;
+  final double cpc;
+  final double h2o;
+  final double gravas;
+  final double arenas;
+  final double aditivos;
+  final double insumos;
   final double costo;
   final int flg_col;
 
@@ -23,6 +29,12 @@ class ProductoC {
     required this.revenimiento,
     required this.colocacion,
     required this.variante,
+    required this.cpc,
+    required this.h2o,
+    required this.gravas,
+    required this.arenas,
+    required this.aditivos,
+    required this.insumos,
     required this.costo,
     required this.flg_col,
   });
@@ -38,9 +50,19 @@ class ProductoC {
       revenimiento: parseInt(json['Revenimiento']),
       colocacion: parseString(json['Colocacion']),
       variante: parseString(json['Variante']),
+      cpc: parseDouble(json['CPC']),
+      h2o: parseDouble(json['H2O']),
+      gravas: parseDouble(json['GRAVAS']),
+      arenas: parseDouble(json['ARENAS']),
+      aditivos: parseDouble(json['ADITIVOS']),
+      insumos: parseDouble(json['INSUMOS']),
       costo: parseDouble(json['COSTO']),
       flg_col: parseInt(json['FlgCol']),
     );
+  }
+  @override
+  String toString() {
+    return 'ProdutoC(Producto: $producto, CPC: $cpc H2O: $h2o Gravas: $gravas Arenas:$arenas Aditivos:$aditivos COSTO:$costo)';
   }
 
   @override

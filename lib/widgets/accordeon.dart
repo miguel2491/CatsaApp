@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
-import '../model/producto.dart'; // Asegúrate de que esta ruta sea correcta
+import '../model/productoC.dart'; // Asegúrate de que esta ruta sea correcta
 
 class ProductoAccordion extends StatelessWidget {
-  final Producto producto;
+  final ProductoC producto;
+  final double mbminimo;
+  final double mop;
   final bool isSelected;
   final VoidCallback onToggleSeleccion;
   final VoidCallback onDetallePressed;
+  final VoidCallback onEliminar;
 
   const ProductoAccordion({
     super.key,
     required this.producto,
+    required this.mbminimo,
+    required this.mop,
     required this.isSelected,
     required this.onToggleSeleccion,
     required this.onDetallePressed,
+    required this.onEliminar,
   });
 
   @override
   Widget build(BuildContext context) {
+    final mtotal = producto.costo + mbminimo;
+    final sugemop = 100.00 - mop;
+    final precioSE = mtotal / sugemop * 100;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       elevation: 3,
@@ -31,25 +40,30 @@ class ProductoAccordion extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Costo Total: \$${producto.precio.toStringAsFixed(2)}',
+              'Costo MP: \$${producto.costo.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.blue),
             ),
             Text(
-              'Costo Total: \$${producto.precio.toStringAsFixed(2)}',
+              'MB Mínimo: \$${mbminimo.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.green),
             ),
             Text(
-              'Otro dato: ', // Aquí el dato extra que quieres mostrar
-              style: const TextStyle(color: Colors.grey),
+              'Costo Total: \$${mtotal.toStringAsFixed(2)}',
+              style: const TextStyle(color: Colors.green),
             ),
           ],
         ),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         children: [
+          _buildDetailRow(
+            'Precio Sugerido + Extras:',
+            precioSE.toStringAsFixed(2),
+          ),
+          _buildDetailRow('Precio Sugerido (m³):', precioSE.toStringAsFixed(2)),
           _buildDetailRowI(
-            'Cantidad (m³):',
+            'Precio Venta m3:',
             TextFormField(
-              initialValue: producto.cantidad.toString(),
+              initialValue: precioSE.toStringAsFixed(2),
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 isDense: true,
@@ -62,14 +76,29 @@ class ProductoAccordion extends StatelessWidget {
               onChanged: (val) {},
             ),
           ),
-          _buildDetailRow('Bomba (m³):', producto.m3Bomba.toString()),
-          _buildDetailRow('MOP:', producto.mop.toString()),
-          _buildDetailRow('Comentario:', producto.comentario),
+          _buildDetailRow('% Venta:', producto.costo.toString()),
+          _buildDetailRow('Comisión:', producto.costo.toString()),
+          _buildDetailRowI(
+            'Margen Bruto:',
+            TextFormField(
+              initialValue: producto.costo.toString(),
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 8,
+                ),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (val) {},
+            ),
+          ),
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
-              onPressed: onDetallePressed,
+              onPressed: onEliminar,
               icon: const Icon(Icons.delete),
               label: const Text('Eliminar'),
               style: ElevatedButton.styleFrom(
@@ -81,6 +110,7 @@ class ProductoAccordion extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
             ),
           ),

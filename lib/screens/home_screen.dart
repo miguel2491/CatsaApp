@@ -1,5 +1,3 @@
-import 'package:catsa/model/cotizador.dart';
-import 'package:catsa/model/pedido.dart';
 import 'package:catsa/screens/Cotizador/cotizacion.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';
 import 'package:flutter/material.dart';

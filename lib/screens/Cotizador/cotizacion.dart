@@ -3,7 +3,7 @@ import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/extras.dart';
 import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/planta.dart';
-import 'package:catsa/model/producto.dart';
+import 'package:catsa/model/plantaInfo.dart';
 import 'package:catsa/model/productoC.dart';
 import 'package:catsa/service/api.dart' as api_service;
 import 'package:catsa/widgets/accordeon.dart';
@@ -27,9 +27,11 @@ class _CotizacionState extends State<Cotizacion> {
   bool _isLoading = true;
   List<Clientes> _clientes = [];
   List<Obras> _obras = [];
-  List<Producto> _productos = [];
-  List<Producto> _productosSeleccionados = [];
-  List<Producto> productos = [];
+  List<ProductoC> _productos = [];
+  List<ProductoC> _productosSeleccionados = [];
+  List<ProductoC> productos = [];
+  List<ProductoC> productosPlanta = [];
+  List<PlantaInfo> _plantaInfo = [];
   //----------------------------------------------------------------------------
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
@@ -72,6 +74,11 @@ class _CotizacionState extends State<Cotizacion> {
   DateTime? _fechaNacimiento;
   double _valorSlider = 5;
   bool _terminos_aceptados = false;
+  double _fijos = 0.0;
+  double _corpo = 0.0;
+  double _mop = 0.0;
+  double _diesel = 0.0;
+  double _indirecto = 0.0;
 
   //------------------------------------------------------------------------------
   @override
@@ -144,6 +151,53 @@ class _CotizacionState extends State<Cotizacion> {
     }
   }
 
+  Future<void> _loadCostoPlanta() async {
+    try {
+      final resultado = await api_service.fCostoPlanta(_selectedPlanta?.id);
+      if (resultado != null) {
+        // for (var producto in resultado.productos) {
+        //   print('📦 Producto: ${producto.producto}');
+        // }
+        // for (var costo in resultado.costos) {
+        //   print('💰 CPC: ${costo.cpc} 📆 Fecha: ${costo.fecha}');
+        // }
+        if (resultado.costos.isNotEmpty) {
+          _loadInfoPlanta(
+            _selectedPlanta?.id,
+            resultado.costos[0].fecha,
+            resultado.costos[0].cpc,
+          );
+        }
+        setState(() {
+          if (resultado.productos.isNotEmpty) {
+            productosPlanta = resultado.productos;
+          }
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadInfoPlanta(p, f, c) async {
+    try {
+      final infoPla = await api_service.fInfoPlanta(p, f, c);
+      print('🪴 $infoPla');
+      //print('🪴 $f cpc $c');
+      setState(() {
+        _fijos = infoPla[0].fijos;
+        _corpo = infoPla[0].corporativo;
+        _mop = infoPla[0].mop;
+        _diesel = infoPla[0].disel;
+        _indirecto = _fijos + _corpo + _diesel;
+      });
+    } catch (e) {
+      setState(() {});
+    }
+  }
+
   void _enviarFormulario() {
     if (_formKey.currentState!.validate() && _terminos_aceptados) {
       // Procesar los datos del formulario
@@ -162,11 +216,11 @@ class _CotizacionState extends State<Cotizacion> {
   }
 
   void _mostrarSelectorDeProductos() async {
-    final seleccionados = await showModalBottomSheet<List<Producto>>(
+    final seleccionados = await showModalBottomSheet<List<ProductoC>>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        List<Producto> productosFiltrados = [..._productos];
+        List<ProductoC> productosFiltrados = [..._productos];
         List<String> seleccionTemp = _productosSeleccionados
             .map((p) => p.producto)
             .toList(); // Para mantener consistencia
@@ -203,35 +257,32 @@ class _CotizacionState extends State<Cotizacion> {
                   const SizedBox(height: 10),
                   SizedBox(
                     height: 300,
-                    child: Expanded(
-                      child: ListView(
-                        children: productosFiltrados.map((producto) {
-                          final isSelected = seleccionTemp.contains(
-                            producto.producto,
-                          );
-                          return CheckboxListTile(
-                            title: Text(producto.producto),
-                            value: isSelected,
-                            onChanged: (bool? checked) {
-                              print('☠️ $producto.producto');
-                              setModalState(() {
-                                if (checked == true) {
-                                  seleccionTemp.add(producto.producto);
-                                  final seleccionFinal = _productos
-                                      .where(
-                                        (p) =>
-                                            seleccionTemp.contains(p.producto),
-                                      )
-                                      .toList();
-                                  Navigator.pop(context, seleccionFinal);
-                                } else {
-                                  seleccionTemp.remove(producto.producto);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
+                    child: ListView(
+                      children: productosFiltrados.map((producto) {
+                        final isSelected = seleccionTemp.contains(
+                          producto.producto,
+                        );
+                        return CheckboxListTile(
+                          title: Text(producto.producto),
+                          value: isSelected,
+                          onChanged: (bool? checked) {
+                            setModalState(() {
+                              if (checked == true) {
+                                seleccionTemp.add(producto.producto);
+                                final productoSel = producto.producto;
+                                final seleccionFinal = _productos
+                                    .where(
+                                      (p) => seleccionTemp.contains(p.producto),
+                                    )
+                                    .toList();
+                                Navigator.pop(context, seleccionFinal);
+                              } else {
+                                seleccionTemp.remove(producto.producto);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
@@ -401,6 +452,7 @@ class _CotizacionState extends State<Cotizacion> {
                       _loadClientes();
                       _loadObras();
                       _loadProductos();
+                      _loadCostoPlanta();
                     });
                   },
                   validator: (value) {
@@ -640,42 +692,65 @@ class _CotizacionState extends State<Cotizacion> {
                   onPressed: _mostrarSelectorDeProductos,
                 ),
                 const SizedBox(height: 20),
-                ListView.builder(
-                  shrinkWrap:
-                      true, // Se adapta al contenido, no se expande infinito
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Evita scroll propio
-                  itemCount: _productosSeleccionados.length,
-                  itemBuilder: (context, index) {
-                    final producto = _productosSeleccionados[index];
-                    final isSelected = _productosSeleccionados.any(
-                      (p) => p.producto == producto.producto,
-                    );
-                    return ProductoAccordion(
-                      producto: producto,
-                      isSelected: isSelected,
-                      onToggleSeleccion: () {
-                        setState(() {
-                          if (isSelected) {
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: 600, // Máximo deseado
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap:
+                        true, // Se adapta al contenido, no se expande infinito
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Evita scroll propio
+                    itemCount: _productosSeleccionados.length,
+                    itemBuilder: (context, index) {
+                      final producto = _productosSeleccionados[index];
+                      final encontrado = _productosSeleccionados.firstWhere(
+                        (p) => p.producto == producto.producto,
+                        // ignore: cast_from_null_always_fails
+                        orElse: () => null as ProductoC,
+                      );
+                      print(
+                        '🎃🩻💀Producto encontrado: ${encontrado.producto} - CPC: ${encontrado.cpc} H2O: ${encontrado.h2o}',
+                      );
+                      print('⚽ $_indirecto 📌 $_fijos');
+                      final isSelected = _productosSeleccionados.any(
+                        (p) => p.producto == producto.producto,
+                      );
+                      return ProductoAccordion(
+                        producto: encontrado,
+                        mbminimo: _indirecto,
+                        mop: _mop,
+                        isSelected: isSelected,
+                        onToggleSeleccion: () {
+                          setState(() {
+                            if (isSelected) {
+                              _productosSeleccionados.removeWhere(
+                                (p) => p.producto == producto.producto,
+                              );
+                            } else {
+                              _productosSeleccionados.add(producto);
+                            }
+                          });
+                        },
+                        onDetallePressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DetalleProductoWidget(producto: producto),
+                            ),
+                          );
+                        },
+                        onEliminar: () {
+                          setState(() {
                             _productosSeleccionados.removeWhere(
                               (p) => p.producto == producto.producto,
                             );
-                          } else {
-                            _productosSeleccionados.add(producto);
-                          }
-                        });
-                      },
-                      onDetallePressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                DetalleProductoWidget(producto: producto),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                          });
+                        },
+                      );
+                    },
+                  ),
                 ),
                 CenteredDivider(title: 'EXTRAS'),
                 ElevatedButton.icon(
@@ -683,27 +758,33 @@ class _CotizacionState extends State<Cotizacion> {
                   label: const Text('Agregar Extras'),
                   onPressed: _mostrarExtras,
                 ),
-                ListView.builder(
-                  shrinkWrap:
-                      true, // Se adapta al contenido, no se expande infinito
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Evita scroll propio
-                  itemCount: extras.length,
-                  itemBuilder: (context, index) {
-                    final extra = extras[index];
-                    return ExtraAccordion(
-                      extra: extra,
-                      onDetallePressed: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (_) =>
-                        //         DetalleProductoWidget(producto: extra),
-                        //   ),
-                        // );
-                      },
-                    );
-                  },
+                const SizedBox(height: 20),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: 400, // Máximo deseado
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap:
+                        true, // Se adapta al contenido, no se expande infinito
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Evita scroll propio
+                    itemCount: extras.length,
+                    itemBuilder: (context, index) {
+                      final extra = extras[index];
+                      return ExtraAccordion(
+                        extra: extra,
+                        onDetallePressed: () {
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (_) =>
+                          //         DetalleProductoWidget(producto: extra),
+                          //   ),
+                          // );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:catsa/model/clientes.dart';
+import 'package:catsa/model/costos.dart';
+import 'package:catsa/model/costos_res.dart';
 import 'package:catsa/model/obras.dart';
+import 'package:catsa/model/plantaInfo.dart';
 import 'package:catsa/model/producto.dart';
+import 'package:catsa/model/productoC.dart';
 import 'package:http/http.dart' as http;
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/cotizador.dart';
@@ -197,11 +201,61 @@ Future<List<Obras>> fObras(planta) async {
   }
 }
 
-Future<List<Producto>> fProductosPlanta(planta) async {
+Future<List<ProductoC>> fProductosPlanta(planta) async {
   try {
     final response = await http.get(
       Uri.parse(
         'http://apicatsa.catsaconcretos.mx:2543/api/App/GetListProductosPlanta/$planta',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((json) => ProductoC.fromJson(json)).toList();
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('❌ Error inesperado en fPlanta: $e');
+    return [];
+  }
+}
+
+Future<ResultadoCostoPlanta?> fCostoPlanta(planta) async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/App/GetCostoPlanta/$planta',
+      ),
+    );
+    print('📦 Body 🎁: ${response.body}');
+    if (response.statusCode == 200) {
+      final List<dynamic> allData = jsonDecode(response.body);
+      final productos = (allData[0] as List)
+          .map((json) => ProductoC.fromJson(json))
+          .toList();
+
+      final costos = (allData[1] as List)
+          .map((json) => CostoC.fromJson(json))
+          .toList();
+
+      return ResultadoCostoPlanta(productos: productos, costos: costos);
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('❌ Error inesperado en fCostoPlanta: $e');
+    return null;
+  }
+}
+
+Future<List<PlantaInfo>> fInfoPlanta(planta, fecha, cpc) async {
+  final prefs = await SharedPreferences.getInstance();
+  final usuario = prefs.getString('userApp');
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/App/GetInfoPlanta/C,$planta,$usuario,$fecha,$cpc',
       ),
     );
     print('🌐 Status: ${response.statusCode}');
@@ -209,14 +263,12 @@ Future<List<Producto>> fProductosPlanta(planta) async {
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      print('🎋🎁🩻 Productos recibidos: ${data.length}');
-      return data.map((json) => Producto.fromJson(json)).toList();
+      return data.map((json) => PlantaInfo.fromJson(json)).toList();
     } else {
       throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
     }
-  } catch (e, stacktrace) {
-    print('❌ Error inesperado en fPlanta: $e');
-    print(stacktrace);
+  } catch (e) {
+    print('❌ Error inesperado en fInfoPlanta: $e');
     return [];
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../model/producto.dart';
+import '../model/productoC.dart';
 import 'package:catsa/widgets/detalle_producto.dart';
 
 class ProductoCotizadoPage extends StatelessWidget {
-  final Producto producto;
+  final ProductoC producto;
 
   const ProductoCotizadoPage({Key? key, required this.producto})
     : super(key: key);

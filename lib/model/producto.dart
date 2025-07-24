@@ -27,6 +27,11 @@ class Producto {
     required this.mb,
   });
 
+  @override
+  String toString() {
+    return 'Producto(producto: $producto, precio: $precio MB: $mb)';
+  }
+
   factory Producto.fromJson(Map<String, dynamic> json) {
     return Producto(
       producto: parseString(json['Producto']),
