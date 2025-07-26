@@ -39,6 +39,7 @@ class _CotizacionState extends State<Cotizacion> {
   final _passwordController = TextEditingController();
   final TextEditingController _cotizacionController = TextEditingController();
   final TextEditingController _obraController = TextEditingController();
+  final TextEditingController _noobraController = TextEditingController();
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _clienteSeleccionado = TextEditingController();
   final TextEditingController _obraSeleccionado = TextEditingController();
@@ -79,7 +80,7 @@ class _CotizacionState extends State<Cotizacion> {
   double _mop = 0.0;
   double _diesel = 0.0;
   double _indirecto = 0.0;
-
+  double _comision = 0.5;
   //------------------------------------------------------------------------------
   @override
   void initState() {
@@ -167,6 +168,7 @@ class _CotizacionState extends State<Cotizacion> {
             resultado.costos[0].fecha,
             resultado.costos[0].cpc,
           );
+          _fnComision(null);
         }
         setState(() {
           if (resultado.productos.isNotEmpty) {
@@ -195,6 +197,22 @@ class _CotizacionState extends State<Cotizacion> {
       });
     } catch (e) {
       setState(() {});
+    }
+  }
+
+  Future<void> _fnComision(obra) async {
+    final resultado = await api_service.fVolumenComision(
+      _selectedPlanta?.id,
+      obra,
+    );
+    if (resultado != null && resultado.volumen.isNotEmpty) {
+      final p3min = resultado.volumen.first.p3min;
+      print('〽️ $p3min');
+      setState(() {
+        _comision = p3min;
+      });
+    } else {
+      print('⚠️ No hay resultados');
     }
   }
 
@@ -646,7 +664,9 @@ class _CotizacionState extends State<Cotizacion> {
 
                     if (obraSeleccionada != null) {
                       setState(() {
+                        _fnComision(obraSeleccionada.no_obra);
                         _obraController.text = obraSeleccionada.obra;
+                        _noobraController.text = obraSeleccionada.no_obra;
                       });
                     }
                   },
@@ -709,10 +729,6 @@ class _CotizacionState extends State<Cotizacion> {
                         // ignore: cast_from_null_always_fails
                         orElse: () => null as ProductoC,
                       );
-                      print(
-                        '🎃🩻💀Producto encontrado: ${encontrado.producto} - CPC: ${encontrado.cpc} H2O: ${encontrado.h2o}',
-                      );
-                      print('⚽ $_indirecto 📌 $_fijos');
                       final isSelected = _productosSeleccionados.any(
                         (p) => p.producto == producto.producto,
                       );
@@ -720,6 +736,7 @@ class _CotizacionState extends State<Cotizacion> {
                         producto: encontrado,
                         mbminimo: _indirecto,
                         mop: _mop,
+                        comision: _comision,
                         isSelected: isSelected,
                         onToggleSeleccion: () {
                           setState(() {

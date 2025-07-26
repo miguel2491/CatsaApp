@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../model/productoC.dart'; // Asegúrate de que esta ruta sea correcta
 
-class ProductoAccordion extends StatelessWidget {
+class ProductoAccordion extends StatefulWidget {
   final ProductoC producto;
   final double mbminimo;
   final double mop;
+  final double comision;
   final bool isSelected;
   final VoidCallback onToggleSeleccion;
   final VoidCallback onDetallePressed;
@@ -15,6 +16,7 @@ class ProductoAccordion extends StatelessWidget {
     required this.producto,
     required this.mbminimo,
     required this.mop,
+    required this.comision,
     required this.isSelected,
     required this.onToggleSeleccion,
     required this.onDetallePressed,
@@ -22,10 +24,42 @@ class ProductoAccordion extends StatelessWidget {
   });
 
   @override
+  State<ProductoAccordion> createState() => _ProductoAccordionState();
+}
+
+class _ProductoAccordionState extends State<ProductoAccordion> {
+  double precio = 0.0;
+  double mtotal = 0.0;
+  double sugemop = 0.0;
+  double precioSE = 0.0;
+  double ext = 0.0;
+  double mb = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fnVars();
+    // calcularComision();
+  }
+
+  Future<void> _fnVars() async {
+    final mtotal_ = widget.producto.costo + widget.mbminimo;
+    final sugemop_ = 100.00 - widget.mop;
+    final precioSE_ = mtotal_ / sugemop_ * 100;
+    final ext_ = 0.0;
+    final mb_ = precioSE_ - (widget.producto.costo + ext_);
+    setState(() {
+      mtotal = mtotal_;
+      sugemop = sugemop_;
+      precioSE = precioSE_;
+      ext = ext_;
+      mb = mb_;
+      //comision = calcularC; // Aquí puedes usar un cálculo real si lo necesitas
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final mtotal = producto.costo + mbminimo;
-    final sugemop = 100.00 - mop;
-    final precioSE = mtotal / sugemop * 100;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       elevation: 3,
@@ -33,18 +67,18 @@ class ProductoAccordion extends StatelessWidget {
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
-          producto.producto,
+          widget.producto.producto,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Costo MP: \$${producto.costo.toStringAsFixed(2)}',
+              'Costo MP: \$${widget.producto.costo.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.blue),
             ),
             Text(
-              'MB Mínimo: \$${mbminimo.toStringAsFixed(2)}',
+              'MB Mínimo: \$${widget.mbminimo.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.green),
             ),
             Text(
@@ -76,12 +110,27 @@ class ProductoAccordion extends StatelessWidget {
               onChanged: (val) {},
             ),
           ),
-          _buildDetailRow('% Venta:', producto.costo.toString()),
-          _buildDetailRow('Comisión:', producto.costo.toString()),
+          _buildDetailRowI(
+            '% Venta:',
+            TextFormField(
+              initialValue: widget.mop.toStringAsFixed(2),
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 8,
+                ),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (val) {},
+            ),
+          ),
+          _buildDetailRow('Comisión:', widget.comision.toStringAsFixed(2)),
           _buildDetailRowI(
             'Margen Bruto:',
             TextFormField(
-              initialValue: producto.costo.toString(),
+              initialValue: mb.toStringAsFixed(2),
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 isDense: true,
@@ -98,7 +147,7 @@ class ProductoAccordion extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
-              onPressed: onEliminar,
+              onPressed: widget.onEliminar,
               icon: const Icon(Icons.delete),
               label: const Text('Eliminar'),
               style: ElevatedButton.styleFrom(

@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'package:catsa/model/clientes.dart';
+import 'package:catsa/model/comision.dart';
+import 'package:catsa/model/comision_vendedor.dart';
 import 'package:catsa/model/costos.dart';
 import 'package:catsa/model/costos_res.dart';
 import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/plantaInfo.dart';
 import 'package:catsa/model/producto.dart';
 import 'package:catsa/model/productoC.dart';
+import 'package:catsa/model/vol_comision.dart';
+import 'package:catsa/model/volumen.dart';
 import 'package:http/http.dart' as http;
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/cotizador.dart';
@@ -228,7 +232,7 @@ Future<ResultadoCostoPlanta?> fCostoPlanta(planta) async {
         'http://apicatsa.catsaconcretos.mx:2543/api/App/GetCostoPlanta/$planta',
       ),
     );
-    print('📦 Body 🎁: ${response.body}');
+
     if (response.statusCode == 200) {
       final List<dynamic> allData = jsonDecode(response.body);
       final productos = (allData[0] as List)
@@ -273,6 +277,45 @@ Future<List<PlantaInfo>> fInfoPlanta(planta, fecha, cpc) async {
   }
 }
 
+Future<RVolumenComision?> fVolumenComision(planta, obra) async {
+  final prefs = await SharedPreferences.getInstance();
+  final userApp = prefs.getString('userApp');
+  print('🪴$planta 🎡$obra 〽️$userApp');
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'http://apicatsa.catsaconcretos.mx:2543/api/app/GetVolumenComision/$planta,$obra,$userApp',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> allData = jsonDecode(response.body);
+
+      final Comision_vendedor = (allData[0] as List)
+          .map((json) => ComisionVendedor.fromJson(json))
+          .toList();
+
+      final comision = (allData[1] as List)
+          .map((json) => Comision.fromJson(json))
+          .toList();
+
+      final volumen = (allData[2] as List)
+          .map((json) => Volumen.fromJson(json))
+          .toList();
+
+      return RVolumenComision(
+        comisionVendedor: Comision_vendedor,
+        comision: comision,
+        volumen: volumen,
+      );
+    } else {
+      throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('❌ Error inesperado en fVolumenComision: $e');
+    return null;
+  }
+}
 //UTILS
 
 double calcularSubtotalPed(

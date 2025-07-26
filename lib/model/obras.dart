@@ -29,6 +29,10 @@ class Obras {
 
   @override
   int get hashCode => no_obra.hashCode;
+  @override
+  String toString() {
+    return 'Obra(obra:$obra, noobra:$no_obra)';
+  }
 }
 
 String parseString(dynamic value) {
