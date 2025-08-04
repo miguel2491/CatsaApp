@@ -5,6 +5,7 @@ import 'package:catsa/model/comision_vendedor.dart';
 import 'package:catsa/model/costos.dart';
 import 'package:catsa/model/costos_res.dart';
 import 'package:catsa/model/obras.dart';
+import 'package:catsa/model/pedido_online.dart';
 import 'package:catsa/model/plantaInfo.dart';
 import 'package:catsa/model/producto.dart';
 import 'package:catsa/model/productoC.dart';
@@ -316,6 +317,23 @@ Future<RVolumenComision?> fVolumenComision(planta, obra) async {
     return null;
   }
 }
+
+Future<List<Online>> fPOnline(planta, fecha) async {
+  print('⚽☠️🎃 $planta 🩻 $fecha');
+  final response = await http.get(
+    Uri.parse(
+      'http://apicatsa.catsaconcretos.mx:2543/api/Logistica/GetPLineaR/$planta,$fecha',
+    ),
+  );
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    print('⚽☠️🎃 $data');
+    return data.map((json) => Online.fromJson(json)).toList();
+  } else {
+    throw Exception('Error al cargar Pedidos OnLine');
+  }
+}
+
 //UTILS
 
 double calcularSubtotalPed(

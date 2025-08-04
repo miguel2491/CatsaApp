@@ -1,5 +1,6 @@
 import 'package:catsa/screens/Cotizador/cotizacion.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';
+import 'package:catsa/screens/Pedidos/pedido_linea.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
 import '../widgets/app_drawer.dart';
@@ -22,6 +23,12 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return; // no cambies _selectedIndex si navegas
     } else if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PedidoOnline()),
+      );
+      return;
+    } else if (index == 2) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const PedidoForm()),
@@ -81,6 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.file),
             label: 'Cotización',
+          ),
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.feed),
+            label: 'En Línea',
           ),
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.shoppingBag),
