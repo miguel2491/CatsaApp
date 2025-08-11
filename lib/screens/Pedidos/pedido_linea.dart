@@ -62,6 +62,7 @@ class _PedidoOnlineState extends State<PedidoOnline> {
   }
 
   void _fetchFilteredPedidos() async {
+    //setState(() => _pedidos = []);
     if (_selectedPlanta == null || _selectedStartDate == null) {
       setState(() => _pedidos = []);
       return;
@@ -98,9 +99,12 @@ class _PedidoOnlineState extends State<PedidoOnline> {
 
     if (picked != null) {
       setState(() => _selectedStartDate = picked);
-      if (_selectedEndDate != null && _selectedPlanta != null) {
-        _fetchFilteredPedidos();
-      }
+    }
+  }
+
+  void _getPLinea() async {
+    if (_selectedStartDate != null && _selectedPlanta != null) {
+      _fetchFilteredPedidos();
     }
   }
 
@@ -124,68 +128,81 @@ class _PedidoOnlineState extends State<PedidoOnline> {
         backgroundColor: const Color(0xFF0D0F57),
         foregroundColor: Colors.white,
       ),
-      body: Container(
-        decoration: const BoxDecoration(),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            child: Column(
-              children: [
-                const SizedBox(height: 12),
-                Dropdown(
-                  label: 'Planta',
-                  selectedValue: _selectedPlantaNombre,
-                  items: _plantasNombres,
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedPlantaNombre = newValue;
-                      final plantaSeleccionada = _plantas.firstWhere(
-                        (p) => p.nombre == newValue,
-                        orElse: () => Planta(id: '', nombre: ''),
-                      );
-                      _selectedPlanta = plantaSeleccionada.id;
-                      _fetchFilteredPedidos();
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(
-                    _selectedStartDate != null
-                        ? 'Inicio: ${DateFormat('yyyy-MM-dd').format(_selectedStartDate!)}'
-                        : 'Fecha inicial',
-                    overflow: TextOverflow.ellipsis,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              Dropdown(
+                label: 'Planta',
+                selectedValue: _selectedPlantaNombre,
+                items: _plantasNombres,
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedPlantaNombre = newValue;
+                    final plantaSeleccionada = _plantas.firstWhere(
+                      (p) => p.nombre == newValue,
+                      orElse: () => Planta(id: '', nombre: ''),
+                    );
+                    _selectedPlanta = plantaSeleccionada.id;
+                    _fetchFilteredPedidos();
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        _selectedStartDate != null
+                            ? 'Inicio: ${DateFormat('yyyy-MM-dd').format(_selectedStartDate!)}'
+                            : 'Fecha inicial',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: _pickStartDate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.secondary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
                   ),
-                  onPressed: _pickStartDate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.secondary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  const SizedBox(width: 16), // espacio entre los botones
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.search),
+                      label: Text('BUSCAR', overflow: TextOverflow.ellipsis),
+                      onPressed: _getPLinea,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          104,
+                          10,
+                          226,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: 400, // Máximo deseado
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap:
-                        true, // Se adapta al contenido, no se expande infinito
-                    physics:
-                        const NeverScrollableScrollPhysics(), // Evita scroll propio
-                    itemCount: _pedidos.length,
-                    itemBuilder: (context, index) {
-                      final ponline = _pedidos[index];
-                      return OnlineAccordion(
-                        extra: ponline,
-                        onDetallePressed: () {},
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Aquí se reemplaza ListView por Column si es viable
+              Column(
+                children: _pedidos.map((ponline) {
+                  return OnlineAccordion(
+                    extra: ponline,
+                    onDetallePressed: () {},
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 40), // espacio extra si es necesario
+            ],
           ),
         ),
       ),

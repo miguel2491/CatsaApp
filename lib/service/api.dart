@@ -17,7 +17,7 @@ import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/pedido.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-//Fijas
+//FIJAS
 Future<List<Planta>> fPlantas() async {
   final prefs = await SharedPreferences.getInstance();
   final userApp = prefs.getString('userApp');
@@ -335,7 +335,6 @@ Future<List<Online>> fPOnline(planta, fecha) async {
 }
 
 //UTILS
-
 double calcularSubtotalPed(
   double precioCon,
   double precioBomba,
@@ -360,3 +359,5 @@ String calcularTiempo(int tsegundos) {
 
   return '$tHoras:$tMinutos';
 }
+
+//===================================================================================================================================================================================================
