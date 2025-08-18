@@ -55,7 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _tokenUpd() async {
     final username = emailController.text.trim();
     final prefs = await SharedPreferences.getInstance();
-    final fcmToken = prefs.getString('fcm_token') ?? '';
+    final fcmToken = prefs.getString('auth_token') ?? '';
+
     // Obtener el token FCM guardado
     final url = Uri.parse(
       'http://apicatsa.catsaconcretos.mx:2543/api/Login/UpdTokenLogin',
@@ -65,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'usuario': username, 'fcm_token': fcmToken}),
     );
+
     if (response.statusCode == 200) {
       //final data = jsonDecode(response.body);
       Navigator.pushReplacement(

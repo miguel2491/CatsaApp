@@ -10,6 +10,7 @@ class ProductoAccordion extends StatefulWidget {
   final VoidCallback onToggleSeleccion;
   final VoidCallback onDetallePressed;
   final VoidCallback onEliminar;
+  final VoidCallback onExtraSer;
 
   const ProductoAccordion({
     super.key,
@@ -21,6 +22,7 @@ class ProductoAccordion extends StatefulWidget {
     required this.onToggleSeleccion,
     required this.onDetallePressed,
     required this.onEliminar,
+    required this.onExtraSer,
   });
 
   @override
@@ -144,24 +146,48 @@ class _ProductoAccordionState extends State<ProductoAccordion> {
             ),
           ),
           const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton.icon(
-              onPressed: widget.onEliminar,
-              icon: const Icon(Icons.delete),
-              label: const Text('Eliminar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _mostrarExtras,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Extra'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    backgroundColor: Colors.lightBlue,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: widget.onEliminar,
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Eliminar'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -195,6 +221,103 @@ class _ProductoAccordionState extends State<ProductoAccordion> {
           Expanded(flex: 5, child: valueWidget),
         ],
       ),
+    );
+  }
+
+  void _mostrarExtras() async {
+    String selectedDropdown = 'Tipo A';
+    String inputValue = '';
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Selecciona Extra'),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize:
+                      MainAxisSize.min, // importante para evitar overflow
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Extra",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+
+                    DropdownButtonFormField<String>(
+                      value: selectedDropdown,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Tipo A',
+                          child: Text('Tipo A'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Tipo B',
+                          child: Text('Tipo B'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Tipo C',
+                          child: Text('Tipo C'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedDropdown = value!;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de extra',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    TextFormField(
+                      initialValue: inputValue,
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          inputValue = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Text("ALGO AQU IVA "),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                print('Tipo seleccionado: $selectedDropdown');
+                print('Cantidad ingresada: $inputValue');
+                // final nuevoExtra = Extras(
+                //   concepto: selectedDropdown,
+                //   cantidad: 5,
+                //   descripcion: "-",
+                // );
+                // setState(() {
+                //   extras.add(nuevoExtra);
+                // });
+                Navigator.pop(context);
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

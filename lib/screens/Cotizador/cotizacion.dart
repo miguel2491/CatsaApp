@@ -11,6 +11,7 @@ import 'package:catsa/widgets/accordeon_extra.dart';
 import 'package:catsa/widgets/detalle_producto.dart';
 import 'package:catsa/widgets/divisor.dart';
 import 'package:catsa/widgets/dropdown.dart';
+import 'package:catsa/widgets/drop_planta.dart';
 import 'package:catsa/widgets/input_button.dart';
 import 'package:flutter/material.dart';
 
@@ -330,7 +331,7 @@ class _CotizacionState extends State<Cotizacion> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Selecciona Extra'),
+          title: const Text('Costos Extras'),
           content: StatefulBuilder(
             builder: (context, setStateDialog) {
               return SizedBox(
@@ -340,12 +341,7 @@ class _CotizacionState extends State<Cotizacion> {
                       MainAxisSize.min, // importante para evitar overflow
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Extra",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
                     const SizedBox(height: 6),
-
                     DropdownButtonFormField<String>(
                       value: selectedDropdown,
                       items: const [
@@ -368,12 +364,11 @@ class _CotizacionState extends State<Cotizacion> {
                         });
                       },
                       decoration: const InputDecoration(
-                        labelText: 'Tipo de extra',
+                        labelText: 'Concepto',
                         border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 8),
-
                     TextFormField(
                       initialValue: inputValue,
                       decoration: const InputDecoration(
@@ -388,6 +383,55 @@ class _CotizacionState extends State<Cotizacion> {
                     ),
                     const SizedBox(height: 20),
                     Text("ALGO AQU IVA "),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Col 1',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Col 1',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Col 1',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Col 1',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               );
@@ -412,7 +456,7 @@ class _CotizacionState extends State<Cotizacion> {
                 });
                 Navigator.pop(context);
               },
-              child: const Text('Aceptar'),
+              child: const Text('Agregar'),
             ),
           ],
         );
@@ -450,6 +494,7 @@ class _CotizacionState extends State<Cotizacion> {
             key: _formKey,
             child: Column(
               children: [
+                const SizedBox(height: 10),
                 DropdownButtonFormField<Planta>(
                   value: _selectedPlanta,
                   decoration: const InputDecoration(
@@ -765,11 +810,12 @@ class _CotizacionState extends State<Cotizacion> {
                             );
                           });
                         },
+                        onExtraSer: () {},
                       );
                     },
                   ),
                 ),
-                CenteredDivider(title: 'EXTRAS'),
+                CenteredDivider(title: 'EXTRA SERVICIO'),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
                   label: const Text('Agregar Extras'),

@@ -334,6 +334,27 @@ Future<List<Online>> fPOnline(planta, fecha) async {
   }
 }
 
+Future<List<Cotizador>> fCotizaciones({
+  required String planta,
+  required DateTime fechaInicio,
+  required DateTime fechaFin,
+}) async {
+  final String inicioStr = fechaInicio.toIso8601String().split('T').first;
+  final String finStr = fechaFin.toIso8601String().split('T').first;
+
+  final url =
+      'http://apicatsa.catsaconcretos.mx:2543/api/Operaciones/GetAllPedidos/$planta,$inicioStr,$finStr';
+
+  final response = await http.get(Uri.parse(url));
+
+  if (response.statusCode == 200) {
+    final List data = jsonDecode(response.body);
+    return data.map((json) => Cotizador.fromJson(json)).toList();
+  } else {
+    throw Exception('Error al cargar pedidos');
+  }
+}
+
 //UTILS
 double calcularSubtotalPed(
   double precioCon,
