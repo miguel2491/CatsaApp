@@ -1,6 +1,7 @@
 import 'package:catsa/model/clientes.dart';
 import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/extras.dart';
+import 'package:catsa/model/extra_serv.dart';
 import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/plantaInfo.dart';
@@ -69,6 +70,8 @@ class _CotizacionState extends State<Cotizacion> {
   final List<String> _tc = ['Constructor', 'Revendedor'];
 
   List<Extras> extras = [];
+  List<ExtraServ> extra_serv = [];
+  List<ExtraServ> extra_serv_pro = [];
   //----------------------------------------------------------------------------
   Cotizador? _cotizacionResult;
   String? _clienteResult;
@@ -82,6 +85,11 @@ class _CotizacionState extends State<Cotizacion> {
   double _diesel = 0.0;
   double _indirecto = 0.0;
   double _comision = 0.5;
+  //------------------------------------------------------------------------------
+  ExtraServ? extraSeleccionado;
+  TextEditingController idExtraController = TextEditingController();
+  TextEditingController costoController = TextEditingController();
+  TextEditingController cantMinController = TextEditingController();
   //------------------------------------------------------------------------------
   @override
   void initState() {
@@ -187,14 +195,30 @@ class _CotizacionState extends State<Cotizacion> {
   Future<void> _loadInfoPlanta(p, f, c) async {
     try {
       final infoPla = await api_service.fInfoPlanta(p, f, c);
-      print('🪴 $infoPla');
-      //print('🪴 $f cpc $c');
+      print("📦 ResultSet[0]: ${infoPla[0]}");
+      print("📦 ResultSet[1]: ${infoPla[1]}");
       setState(() {
-        _fijos = infoPla[0].fijos;
-        _corpo = infoPla[0].corporativo;
-        _mop = infoPla[0].mop;
-        _diesel = infoPla[0].disel;
+        final plantaData = infoPla[0][0];
+        _fijos = plantaData["FIJOS"];
+        _corpo = plantaData["CORPORATIVO"];
+        _mop = plantaData["MOP"];
+        _diesel = plantaData["DISEL"];
         _indirecto = _fijos + _corpo + _diesel;
+        //extra_serv = [ExtraServ.fromJson(infoPla[1] as Map<String, dynamic>)];
+        extra_serv = infoPla[1]
+            .where((e) => (e['Nivel'] ?? 0) == 0) // 👈 filtra Motivo = 0
+            .map((e) => ExtraServ.fromJson(e))
+            .toList();
+        extra_serv_pro = infoPla[1]
+            .where((e) => (e['Nivel'] ?? 0) != 0) // 👈 filtra Motivo = 0
+            .map((e) => ExtraServ.fromJson(e))
+            .toList();
+        print("✅ Extra_serv cargado: ${extra_serv.length} items");
+        for (var e in extra_serv) {
+          print(
+            " -> ${e.IdExtra} | ${e.Descripcion} | ${e.Nivel} | ${e.Costo} | ${e.CantMin} ",
+          );
+        }
       });
     } catch (e) {
       setState(() {});
@@ -208,7 +232,6 @@ class _CotizacionState extends State<Cotizacion> {
     );
     if (resultado != null && resultado.volumen.isNotEmpty) {
       final p3min = resultado.volumen.first.p3min;
-      print('〽️ $p3min');
       setState(() {
         _comision = p3min;
       });
@@ -327,6 +350,7 @@ class _CotizacionState extends State<Cotizacion> {
   void _mostrarExtras() async {
     String selectedDropdown = 'Tipo A';
     String inputValue = '';
+    print('🩻 $extra_serv');
     await showDialog(
       context: context,
       builder: (context) {
@@ -337,30 +361,55 @@ class _CotizacionState extends State<Cotizacion> {
               return SizedBox(
                 width: double.maxFinite,
                 child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min, // importante para evitar overflow
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: selectedDropdown,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Tipo A',
-                          child: Text('Tipo A'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Tipo B',
-                          child: Text('Tipo B'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Tipo C',
-                          child: Text('Tipo C'),
-                        ),
-                      ],
+                      isExpanded: true,
+                      value:
+                          selectedDropdown.isNotEmpty &&
+                              extra_serv.any(
+                                (e) => e.IdExtra.toString() == selectedDropdown,
+                              )
+                          ? selectedDropdown
+                          : null,
+                      items: extra_serv.map((extraServ) {
+                        return DropdownMenuItem<String>(
+                          value: extraServ.IdExtra.toString(),
+                          child: Text(
+                            extraServ.Descripcion,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ), // 👈 lo que ve el usuario
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         setStateDialog(() {
-                          selectedDropdown = value!;
+                          selectedDropdown = value ?? "";
+                          extraSeleccionado = extra_serv.firstWhere(
+                            (e) => e.IdExtra.toString() == selectedDropdown,
+                            orElse: () => ExtraServ(
+                              IdExtra: 0,
+                              Costo: 0,
+                              Descripcion: '',
+                              CantMin: 0,
+                              Nivel: 0,
+                              Tipo: 0,
+                              Unidad: '',
+                              Observaciones: '',
+                            ),
+                          );
+                          // actualizar el TextFormField con CantMin
+                          cantMinController.text =
+                              extraSeleccionado?.CantMin.toString() ?? '';
+                          costoController.text =
+                              extraSeleccionado?.Costo.toString() ?? '';
+                          print(
+                            "🎯 Seleccionado: ${extraSeleccionado?.IdExtra}",
+                          );
+                          print("💰 Costo: ${extraSeleccionado?.Costo}");
+                          print("🧱 CantMin: ${extraSeleccionado?.CantMin}");
                         });
                       },
                       decoration: const InputDecoration(
@@ -370,7 +419,7 @@ class _CotizacionState extends State<Cotizacion> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      initialValue: inputValue,
+                      controller: cantMinController,
                       decoration: const InputDecoration(
                         labelText: 'Cantidad',
                         border: OutlineInputBorder(),
@@ -382,49 +431,15 @@ class _CotizacionState extends State<Cotizacion> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    Text("ALGO AQU IVA "),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Col 1',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    Text("Costo: ${costoController.text}"),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: TextFormField(
+                            controller: costoController,
                             decoration: const InputDecoration(
-                              labelText: 'Col 1',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Col 1',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Col 1',
+                              labelText: 'Precio',
                               border: OutlineInputBorder(),
                             ),
                           ),

@@ -254,7 +254,7 @@ Future<ResultadoCostoPlanta?> fCostoPlanta(planta) async {
   }
 }
 
-Future<List<PlantaInfo>> fInfoPlanta(planta, fecha, cpc) async {
+Future<List<List<Map<String, dynamic>>>> fInfoPlanta(planta, fecha, cpc) async {
   final prefs = await SharedPreferences.getInstance();
   final usuario = prefs.getString('userApp');
   try {
@@ -263,12 +263,17 @@ Future<List<PlantaInfo>> fInfoPlanta(planta, fecha, cpc) async {
         'http://apicatsa.catsaconcretos.mx:2543/api/App/GetInfoPlanta/C,$planta,$usuario,$fecha,$cpc',
       ),
     );
-    print('🌐 Status: ${response.statusCode}');
-    print('📦 Body: ${response.body}');
 
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.map((json) => PlantaInfo.fromJson(json)).toList();
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = jsonResponse["data"] as List;
+      return data
+          .map(
+            (resultSet) => (resultSet as List)
+                .map((e) => e as Map<String, dynamic>)
+                .toList(),
+          )
+          .toList();
     } else {
       throw Exception('Error HTTP al cargar productos: ${response.statusCode}');
     }

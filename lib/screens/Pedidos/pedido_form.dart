@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as console;
 import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/pedido.dart';
 import 'package:catsa/model/producto.dart';
@@ -161,6 +162,15 @@ class _PedidoFormState extends State<PedidoForm> {
     });
   }
 
+  Future<void> _getInfoCot(String? planta) async {
+    try {
+      final coti = await ApiService.fPlantas();
+      print('☠️ $planta R= ${coti.toString()}');
+    } catch (e) {
+      print('$e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,6 +198,7 @@ class _PedidoFormState extends State<PedidoForm> {
                 setState(() {
                   _selectedPlanta = planta;
                 });
+                _getInfoCot(planta?.nombre);
               },
             ),
             const SizedBox(height: 12),
