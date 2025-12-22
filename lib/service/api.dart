@@ -11,6 +11,7 @@ import 'package:catsa/model/producto.dart';
 import 'package:catsa/model/productoC.dart';
 import 'package:catsa/model/vol_comision.dart';
 import 'package:catsa/model/volumen.dart';
+import 'package:catsa/model/bitacora.dart';
 import 'package:http/http.dart' as http;
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/cotizador.dart';
@@ -357,6 +358,30 @@ Future<List<Cotizador>> fCotizaciones({
     return data.map((json) => Cotizador.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar pedidos');
+  }
+}
+
+// QR
+Future<String> sendBitacora(send) async {
+  print('⚽☠️🎃 $send');
+  final response = await http.post(
+    Uri.parse(
+      'http://apicatsa.catsaconcretos.mx:2543/api/Administracion/setBitacoraEquipo',
+    ),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(send),
+  );
+
+  print('💀 ${response.statusCode} ${response.body}');
+
+  if (response.statusCode == 200) {
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map && decoded.containsKey('message')) {
+      return decoded['message'];
+    }
+    return 'Operación exitosa';
+  } else {
+    throw Exception('Error al cargar la bitácora (${response.statusCode})');
   }
 }
 

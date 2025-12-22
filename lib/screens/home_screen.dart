@@ -1,6 +1,8 @@
 import 'package:catsa/screens/Cotizador/cotizacion.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';
 import 'package:catsa/screens/Pedidos/pedido_linea.dart';
+import 'package:catsa/screens/QR/leerQR.dart';
+import 'package:catsa/service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
 import '../widgets/app_drawer.dart';
@@ -34,10 +36,21 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(builder: (context) => const PedidoForm()),
       );
       return;
+    } else if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LeerQR()),
+      );
+      return;
     }
     // setState(() {
     //   _selectedIndex = index;
     // });
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -96,6 +109,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.shoppingBag),
             label: 'Pedidos',
+          ),
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.qrcode),
+            label: 'Lector QR',
           ),
         ],
         type: BottomNavigationBarType.fixed,

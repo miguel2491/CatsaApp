@@ -33,7 +33,7 @@ class _CotizacionState extends State<Cotizacion> {
   List<ProductoC> _productosSeleccionados = [];
   List<ProductoC> productos = [];
   List<ProductoC> productosPlanta = [];
-  List<PlantaInfo> _plantaInfo = [];
+  final List<PlantaInfo> _plantaInfo = [];
   //----------------------------------------------------------------------------
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
@@ -77,8 +77,8 @@ class _CotizacionState extends State<Cotizacion> {
   String? _clienteResult;
   String? _obraResult;
   DateTime? _fechaNacimiento;
-  double _valorSlider = 5;
-  bool _terminos_aceptados = false;
+  final double _valorSlider = 5;
+  final bool _terminos_aceptados = false;
   double _fijos = 0.0;
   double _corpo = 0.0;
   double _mop = 0.0;

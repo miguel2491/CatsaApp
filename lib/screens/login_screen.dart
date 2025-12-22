@@ -43,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         await prefs.setString('userApp', username);
+        print('💀🎶 $token');
         _tokenUpd();
       } else {
         _showError('Usuario o contraseña incorrectos');

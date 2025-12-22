@@ -6,7 +6,6 @@ import 'package:catsa/core/app_color.dart';
 import 'package:intl/intl.dart';
 import '../../model/cotizador.dart';
 import '../../service/api.dart';
-import 'cotizador_detail.dart';
 
 class Cotizaciones extends StatefulWidget {
   const Cotizaciones({super.key});

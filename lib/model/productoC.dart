@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 class ProductoC {
   final String producto;
   final String descripcion;
