@@ -1,6 +1,11 @@
 import 'dart:io';
+import 'package:catsa/db/database_helper.dart';
+import 'package:catsa/model/planta.dart';
+import 'package:catsa/service/apiLocal.dart' as ApiLocal;
+import 'package:catsa/service/api.dart' as Api;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:http/http.dart' as http;
 
@@ -9,79 +14,224 @@ class OfflineSync {
   factory OfflineSync() => _instance;
   OfflineSync._internal();
 
-  Database? _db;
-
   // ---------------------------------------------------------
   // 🔹 Inicializa todo (BD + Listener)
   // ---------------------------------------------------------
   Future<void> init() async {
-    await _initDB();
+    await DatabaseHelper.instance.database;
     _listenConnectionChanges();
   }
 
-  // ---------------------------------------------------------
-  // 🔹 Crear base de datos SQLite
-  // ---------------------------------------------------------
-  Future<void> _initDB() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, "cotizaciones.db");
-
-    _db = await openDatabase(
-      path,
-      version: 2,
-      onCreate: (db, version) async {
-        // Se ejecuta solo la primera vez
-        await db.execute("""
-      CREATE TABLE cotizaciones(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        cliente TEXT,
-        total REAL,
-        fecha TEXT,
-        data TEXT,
-        enviado INTEGER DEFAULT 0
-      )
-    """);
-
-        await db.execute("""
-      CREATE TABLE pedidos(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        precio REAL,
-        cantidad INTEGER
-      )
-    """);
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute("""
-        CREATE TABLE pedidos(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          nombre TEXT,
-          precio REAL,
-          cantidad INTEGER
-        )
-      """);
-        }
-      },
+  // ---------------------------------------------------------------------------
+  // 🔹 Guardar Planta localmente
+  // ---------------------------------------------------------------------------
+  Future<void> savePlanta(Planta planta) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.insert(
+      "plantas",
+      planta.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
-    print("📦 Base local lista en: $path");
+    print("📝 Plantas guardadas localmente");
+  }
+
+  Future<void> insertPlantas(List<Planta> plantas) async {
+    final _db = await DatabaseHelper.instance.database;
+    final batch = _db.batch();
+
+    for (final p in plantas) {
+      batch.insert(
+        'plantas',
+        p.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<Map<String, dynamic>>> getPlantas() async {
+    final db = await DatabaseHelper.instance.database;
+
+    return await db.query("plantas", orderBy: "clave DESC");
+  }
+
+  Future<Map<String, dynamic>?> getPlantaById(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    final res = await db.query('plantas', where: 'id = ?', whereArgs: [id]);
+
+    return res.isNotEmpty ? res.first : null;
+  }
+
+  Future<int> updatePlanta(int id, Map<String, dynamic> data) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.update('plantas', data, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> deletePlantas(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete('plantas', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ---------------------------------------------------------
+  // 🔹 Guardar Pedidos localmente
+  // ---------------------------------------------------------
+  Future<int> insertPedido(Map<String, dynamic> data) async {
+    final _db = await DatabaseHelper.instance.database;
+    return await _db.insert(
+      "pedidos",
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> deletePedido(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete("pedidos", where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getPedidosL() async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.query("pedidos", orderBy: "fechaHoraPedido DESC");
   }
 
   // ---------------------------------------------------------
   // 🔹 Guardar cotización localmente
   // ---------------------------------------------------------
   Future<void> guardarCotizacion(Map data) async {
-    await _db?.insert("cotizaciones", {
-      "cliente": data["cliente"],
-      "total": data["total"],
-      "fecha": DateTime.now().toIso8601String(),
-      "data": data.toString(),
+    final db = await DatabaseHelper.instance.database;
+    await db.insert("cotizaciones", {
+      "idCotizacion": data["cliente"],
+      "Planta": data["total"],
+      "NoCliente": DateTime.now().toIso8601String(),
+      "NoObra": data["total"],
+      "Cliente": data["total"],
+      "Municipio": data["total"],
+      "Contacto": data["total"],
+      "Obra": data["total"],
+      "Direccion": data["total"],
+      "IdVendedor": data["total"],
+      "UsuarioCreo": data["total"],
+      "FlagIVA": data["total"],
+      "FlagTotal": data["total"],
+      "FlagCondiciones": data["total"],
+      "Estatus": data["total"],
+      "IdMotivo": data["total"],
+      "Observaciones": data["total"],
+      "GradoLlenado": data["total"],
+      "TiempoCiclo": data["total"],
+      "CotAnterior": data["total"],
+      "Fuente": data["total"],
+      "Email": data["total"],
+      "Telefono": data["total"],
+      "Coordenadas": data["total"],
+      "FlagObservaciones": data["total"],
+      "Segmento": data["total"],
+      "Canal": data["total"],
+      "PreCot": data["total"],
+      "Elemento": data["total"],
+      "AutorizarPedido": data["total"],
+      "enviado": 0,
+    });
+
+    print("📝 Cotización guardada localmente");
+    //await sincronizar(); // intentar enviar por si hay internet
+  }
+
+  Future<void> guardarCotizacionD(Map data) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.insert("cotizaciones_detalle", {
+      "id_cotizacion": data["cliente"],
+      "Cantidad": data["total"],
+      "Producto": DateTime.now().toIso8601String(),
+      "MOP": data.toString(),
+      "M3Bomba": data["total"],
+      "Precio": data["total"],
+      "MB": data["total"],
+      "FlagVoBo": data["total"],
+      "UsuarioAutoriza": data["total"],
+      "Autoriza": data["total"],
+      "Comentario": data["total"],
+      "FlagImprimir": data["total"],
+      "CostoMP": data["total"],
       "enviado": 0,
     });
 
     print("📝 Cotización guardada localmente");
     await sincronizar(); // intentar enviar por si hay internet
+  }
+
+  Future<void> guardarCotizacionMP(Map data) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.insert("cotizaciones_detalle_MP", {
+      "id_cotizacion": data["cliente"],
+      "Descripcion": data["total"],
+      "CPC": DateTime.now().toIso8601String(),
+      "H2O": data.toString(),
+      "GRAVAS": data["total"],
+      "ARENAS": data["total"],
+      "ADITIVOS": data["total"],
+      "COSTO": data["total"],
+      "MOP0": data["total"],
+      "enviado": 0,
+    });
+
+    print("📝 Cotización guardada localmente");
+    await sincronizar(); // intentar enviar por si hay internet
+  }
+
+  Future<void> guardarCotizacionEx(Map data) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.insert("cotizaciones_extras", {
+      "id_cotizacion": data["cliente"],
+      "IdExtra": data["total"],
+      "Producto": data["total"],
+      "CantidadUser": data["total"],
+      "CantidadCot": data["total"],
+      "Precio": data["total"],
+      "CantMin": data["total"],
+      "Nivel": data["total"],
+      "Tipo": data["total"],
+      "PrecioUser": data["total"],
+      "enviado": 0,
+    });
+
+    print("📝 Cotización ID Extra");
+    //await sincronizar(); // intentar enviar por si hay internet
+  }
+
+  //----------------------------------------------------------
+  Future<int> deleteCotizacion(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete("cotizaciones", where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<int> deleteCotizacionDetalle(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete(
+      "cotizaciones_detalle",
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteCotizacionMP(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete(
+      "cotizaciones_detalle_MP",
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteCotizacionEx(int id) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.delete(
+      "cotizaciones_extras",
+      where: "id = ?",
+      whereArgs: [id],
+    );
   }
 
   // ---------------------------------------------------------
@@ -122,7 +272,7 @@ class OfflineSync {
   // ---------------------------------------------------------
   Future<void> sincronizar() async {
     final connectivity = await Connectivity().checkConnectivity();
-
+    final prefs = await SharedPreferences.getInstance();
     if (connectivity == ConnectivityResult.none) {
       print("⛔ Sin conexión detectada por connectivity_plus");
       return;
@@ -136,13 +286,32 @@ class OfflineSync {
     }
 
     print("🟢 Internet ok → sincronizando…");
+    await prefs.setString('coneccion', 'SI');
     // ... tu proceso de sync...
-    final pendientes = await _db?.query(
-      "cotizaciones",
+    final db = await DatabaseHelper.instance.database;
+    final pendientes = await db.query(
+      "pedidos",
       where: "enviado = ?",
       whereArgs: [0],
     );
     print("🧪 PENDIENTES EN BD: $pendientes");
+    sincronizarCotizaciones();
+  }
+
+  Future<void> sincronizarCotizaciones() async {
+    final pendientes = await ApiLocal.getCotizacionesPen();
+    for (final cotizacion in pendientes) {
+      final ok = await Api.sendCotizacion(cotizacion);
+
+      if (ok) {
+        final idLocal = cotizacion['cabecera']['id'];
+
+        await ApiLocal.eliminarCotizacion(idLocal);
+
+        // o marcar como enviada
+        // await ApiLocal.marcarComoEnviada(idLocal);
+      }
+    }
   }
 
   // ---------------------------------------------------------
@@ -202,6 +371,7 @@ class OfflineSync {
   }
 
   void _iniciarMonitoreoInternet() async {
+    final prefs = await SharedPreferences.getInstance();
     while (_chequeandoInternet) {
       await Future.delayed(Duration(seconds: 2));
 
@@ -212,6 +382,7 @@ class OfflineSync {
         break;
       } else {
         print("⏳ Buscando internet...");
+        await prefs.setString('coneccion', 'NO');
       }
     }
   }

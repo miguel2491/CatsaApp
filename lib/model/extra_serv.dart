@@ -33,6 +33,11 @@ class ExtraServ {
   }
 
   @override
+  String toString() {
+    return 'SExtra(Producto: $IdExtra, Costo: $Costo Desc: $Descripcion Cantidad: $CantMin Nivel:$Nivel Tipo:$Tipo Unidad:$Unidad Obs:$Observaciones)';
+  }
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ExtraServ &&

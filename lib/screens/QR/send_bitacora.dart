@@ -131,7 +131,7 @@ class _SendQRState extends State<SendQR> {
               items: _plantas.map((Planta planta) {
                 return DropdownMenuItem<Planta>(
                   value: planta,
-                  child: Text(planta.nombre),
+                  child: Text(planta.planta),
                 );
               }).toList(),
               onChanged: (Planta? newValue) {

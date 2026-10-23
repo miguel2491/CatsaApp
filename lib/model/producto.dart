@@ -1,5 +1,6 @@
 class Producto {
   final String producto;
+  final String descripcion;
   final double cantidad;
   final double m3Bomba;
   final double bomba;
@@ -14,6 +15,7 @@ class Producto {
 
   Producto({
     required this.producto,
+    required this.descripcion,
     required this.cantidad,
     required this.m3Bomba,
     required this.bomba,
@@ -29,12 +31,13 @@ class Producto {
 
   @override
   String toString() {
-    return 'Producto(producto: $producto, precio: $precio MB: $mb)';
+    return 'Producto(producto: $producto, precio: $precio MB: $mb, Descripcion: $descripcion)';
   }
 
   factory Producto.fromJson(Map<String, dynamic> json) {
     return Producto(
       producto: parseString(json['Producto']),
+      descripcion: parseString(json['Descripcion']),
       cantidad: parseDouble(json['Cantidad']),
       m3Bomba: parseDouble(json['M3Bomba']),
       bomba: parseDouble(json['Bomba']),

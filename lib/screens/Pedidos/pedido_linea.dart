@@ -44,7 +44,7 @@ class _PedidoOnlineState extends State<PedidoOnline> {
       final plantas = await ApiService.fPlantas();
       setState(() {
         _plantas = plantas;
-        _plantasNombres = plantas.map((p) => p.nombre).toList();
+        _plantasNombres = plantas.map((p) => p.planta).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -143,8 +143,8 @@ class _PedidoOnlineState extends State<PedidoOnline> {
                   setState(() {
                     _selectedPlantaNombre = newValue;
                     final plantaSeleccionada = _plantas.firstWhere(
-                      (p) => p.nombre == newValue,
-                      orElse: () => Planta(id: '', nombre: ''),
+                      (p) => p.planta == newValue,
+                      orElse: () => Planta(id: '', planta: ''),
                     );
                     _selectedPlanta = plantaSeleccionada.id;
                     _fetchFilteredPedidos();

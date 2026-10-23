@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:catsa/db/database_helper.dart';
 import 'package:catsa/model/clientes.dart';
 import 'package:catsa/model/comision.dart';
 import 'package:catsa/model/comision_vendedor.dart';
 import 'package:catsa/model/costos.dart';
 import 'package:catsa/model/costos_res.dart';
 import 'package:catsa/model/obras.dart';
+import 'package:catsa/model/pedidoDB.dart';
 import 'package:catsa/model/pedido_online.dart';
 import 'package:catsa/model/plantaInfo.dart';
 import 'package:catsa/model/producto.dart';
@@ -12,23 +14,57 @@ import 'package:catsa/model/productoC.dart';
 import 'package:catsa/model/vol_comision.dart';
 import 'package:catsa/model/volumen.dart';
 import 'package:catsa/model/bitacora.dart';
+import 'package:catsa/service/offline_sync.dart' as ApiLocal;
 import 'package:http/http.dart' as http;
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/cotizador.dart';
 import 'package:catsa/model/pedido.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+
+const String baseUrl = 'http://apicatsa.catsaconcretos.mx:2543/api/App';
+const String baseUrlGn = 'http://apicatsa.catsaconcretos.mx:2543/api';
+
+//DATATBASE
+Future<void> syncPlantas() async {
+  final plantasApi = await fPlantas();
+  final db = await DatabaseHelper.instance.database;
+  final batch = db.batch();
+
+  for (final p in plantasApi) {
+    if (p.id.isEmpty || p.planta.isEmpty) continue;
+
+    batch.insert(
+      'plantas',
+      p.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  await batch.commit(noResult: true);
+}
+
+Future<List<Planta>> getPlantas() async {
+  final db = await DatabaseHelper.instance.database;
+
+  final res = await db.query('plantas', orderBy: 'planta ASC');
+  return res.map((e) => Planta.fromMap(e)).toList();
+}
 
 //FIJAS
 Future<List<Planta>> fPlantas() async {
   final prefs = await SharedPreferences.getInstance();
   final userApp = prefs.getString('userApp');
+
   final response = await http.get(
     Uri.parse(
       'http://apicatsa.catsaconcretos.mx:2543/api/App/GetUserPlanta/${userApp}',
     ),
   );
+
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
+    print("💀 $data");
     return data.map((json) => Planta.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar productos');
@@ -105,19 +141,26 @@ Future<List<String>> fElemento() async {
   ];
 }
 
-Future<List<Cotizador>> fCotizacion(id) async {
-  //final prefs = await SharedPreferences.getInstance();
+Future<Map<String, dynamic>> fCotizacion(int id) async {
   final response = await http.get(
     Uri.parse(
-      'http://apicatsa.catsaconcretos.mx:2543/api/App/GetCotizacion/${id}',
+      'http://apicatsa.catsaconcretos.mx:2543/api/App/GetCotizacion/$id',
     ),
   );
+
   if (response.statusCode == 200) {
-    final List data = jsonDecode(response.body);
-    //print('💀🎶 ${data}');
-    return data.map((json) => Cotizador.fromJson(json)).toList();
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    return {
+      'cotizacion': (data['Cotizacion'] as List)
+          .map((e) => Cotizador.fromJson(e))
+          .toList(),
+      'producto': (data['Producto'] as List)
+          .map((e) => Producto.fromJson(e))
+          .toList(),
+    };
   } else {
-    throw Exception('Error al cargar productos');
+    throw Exception('Error al cargar cotización');
   }
 }
 
@@ -142,9 +185,10 @@ Future<List<Pedido>> fetchPedido({
 }) async {
   final String inicioStr = fechaInicio.toIso8601String().split('T').first;
   final String finStr = fechaFin.toIso8601String().split('T').first;
-
+  final prefs = await SharedPreferences.getInstance();
+  final userApp = prefs.getString('userApp');
   final url =
-      'http://apicatsa.catsaconcretos.mx:2543/api/Operaciones/GetAllPedidos/$planta,$inicioStr,$finStr';
+      'http://apicatsa.catsaconcretos.mx:2543/api/Operaciones/GetAllPedidos/$planta,$inicioStr,$finStr,$userApp,1';
 
   final response = await http.get(Uri.parse(url));
 
@@ -165,6 +209,39 @@ Future<List<Pedido>> fPedido(id) async {
     return data.map((json) => Pedido.fromJson(json)).toList();
   } else {
     throw Exception('Error al cargar productos');
+  }
+}
+
+//CHECK
+Future<bool> comprobarPedPend(Map<String, dynamic> pedido) async {
+  final url = '$baseUrl/addPedido';
+  final response = await http.post(
+    Uri.parse('$url'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(pedido),
+  );
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    await ApiLocal.OfflineSync().deletePedido(pedido['id']);
+    return true;
+  } else {
+    //print('❌ Error API: ${response.statusCode}');
+    return false;
+  }
+}
+
+Future<bool> autorizarPedido(idPedido, tipo, estado) async {
+  final dataP = {'id': idPedido, 'activo': estado, 'tipo': tipo};
+  final url = '$baseUrlGn/Operaciones/setVB';
+  final response = await http.post(
+    Uri.parse('$url'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(dataP),
+  );
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return true;
+  } else {
+    print('❌ Error API: ${response.statusCode}');
+    return false;
   }
 }
 
@@ -359,6 +436,21 @@ Future<List<Cotizador>> fCotizaciones({
   } else {
     throw Exception('Error al cargar pedidos');
   }
+}
+
+//--CREATE
+Future<bool> sendCotizacion(Map<String, dynamic> cotizacion) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/Cotizaciones/GuardarOffline'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(cotizacion),
+  );
+
+  if (response.statusCode == 200) {
+    return true;
+  }
+
+  return false;
 }
 
 // QR

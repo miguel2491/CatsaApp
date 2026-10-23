@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _tokenUpd() async {
     final username = emailController.text.trim();
     final prefs = await SharedPreferences.getInstance();
-    final fcmToken = prefs.getString('auth_token') ?? '';
+    final fcmToken = prefs.getString('fcm_token') ?? '';
 
     // Obtener el token FCM guardado
     final url = Uri.parse(

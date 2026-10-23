@@ -5,8 +5,10 @@ import 'package:catsa/model/extra_serv.dart';
 import 'package:catsa/model/obras.dart';
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/model/plantaInfo.dart';
+import 'package:catsa/model/producto.dart';
 import 'package:catsa/model/productoC.dart';
 import 'package:catsa/service/api.dart' as api_service;
+import 'package:catsa/service/apiLocal.dart' as api_local;
 import 'package:catsa/widgets/accordeon.dart';
 import 'package:catsa/widgets/accordeon_extra.dart';
 import 'package:catsa/widgets/detalle_producto.dart';
@@ -86,7 +88,7 @@ class _CotizacionState extends State<Cotizacion> {
   double _indirecto = 0.0;
   double _comision = 0.5;
   //------------------------------------------------------------------------------
-  ExtraServ? extraSeleccionado;
+  List<ExtraServ> extraSeleccionado = [];
   TextEditingController idExtraController = TextEditingController();
   TextEditingController costoController = TextEditingController();
   TextEditingController cantMinController = TextEditingController();
@@ -94,7 +96,7 @@ class _CotizacionState extends State<Cotizacion> {
   @override
   void initState() {
     super.initState();
-    _loadPlantas();
+    verPlantasDebug();
   }
 
   @override
@@ -105,18 +107,23 @@ class _CotizacionState extends State<Cotizacion> {
     super.dispose();
   }
 
-  Future<void> _loadPlantas() async {
+  Future<void> verPlantasDebug() async {
     try {
-      final plantas = await api_service.fPlantas();
+      final plantas = await api_service.getPlantas();
       setState(() {
         _plantas = plantas;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, s) {
+      print('❌ ERROR getPlantas: $e');
       setState(() {
         _isLoading = false;
       });
     }
+
+    // for (final p in plantas) {
+    //   print('ID: ${p['id']} | Clave: ${p['clave']} | Planta: ${p['planta']}');
+    // }
   }
 
   Future<void> _loadClientes() async {
@@ -240,20 +247,96 @@ class _CotizacionState extends State<Cotizacion> {
     }
   }
 
-  void _enviarFormulario() {
-    if (_formKey.currentState!.validate() && _terminos_aceptados) {
-      // Procesar los datos del formulario
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Formulario enviado: ${_nombreController.text}'),
-        ),
+  Future<void> _enviarFormulario() async {
+    print('🏴‍☠️');
+    print(_productosSeleccionados);
+    print(extras);
+    print('💀');
+    Map<String, dynamic> cotizacion = {
+      'Planta': _selectedPlanta?.id,
+      'NoCliente': _clienteController.text,
+      'NoObra': _obraController.text,
+      'Cliente': _clienteController.text,
+      'Municipio': '-',
+      'Contacto': '-',
+      'Obra': '-',
+      'Direccion': '-',
+      'IdVendedor': '-',
+      'FlagIVA': 0,
+      'FlagTotal': 0,
+      'FlagCondiciones': 0,
+      'IdMotivo': 0,
+      'Fuente': 0, //_selectedF,
+      'Coordenadas': '-,-',
+      'FlagObservaciones': 0,
+      'Segmento': 0, //_selectedSeg,
+      'Canal': 0,
+      'PreCot': 0,
+      'Elemento': '-',
+    };
+
+    List<Map<String, dynamic>> detalle = [];
+    List<Map<String, dynamic>> detalleMP = [];
+    List<Map<String, dynamic>> extras_ = [];
+
+    for (var p in _productosSeleccionados) {
+      detalle.add({
+        'Cantidad': 0,
+        'Producto': p.producto,
+        'MOP': 0,
+        'M3Bomba': 0,
+        'Bomba': 0,
+        'Precio': 0,
+        'MB': 0.0,
+        'FlagVoBo': 0.0,
+        'Comentario': '-',
+        'FlagImprimir': 0,
+        'CostoMP': 0.0,
+      });
+    }
+
+    for (var mp in _productosSeleccionados) {
+      detalleMP.add({
+        'Producto': mp.producto,
+        'Descripcion': mp.producto,
+        'CPC': 0.0,
+        'H2O': 0.0,
+        'GRAVAS': 0.0,
+        'ARENAS': 0.0,
+        'ADITIVOS': 0.0,
+        'COSTO': 0.0,
+        'MOP0': 0.0,
+      });
+    }
+
+    for (var p in extras) {
+      extras_.add({
+        'IdExtra': 0,
+        'Producto': '-',
+        'CantidadUser': 0.0,
+        'CantidadCot': 0.0,
+        'Precio': 0.0,
+        'PrecioUser': 0.0,
+      });
+    }
+
+    try {
+      await api_local.guardarCotizacion(
+        cotizacion,
+        detalle,
+        detalleMP,
+        extras_,
       );
-    } else if (!_terminos_aceptados) {
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes aceptar los términos y condiciones'),
-        ),
+        const SnackBar(content: Text('Cotización guardada localmente')),
       );
+    } catch (e) {
+      print(e);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     }
   }
 
@@ -387,29 +470,28 @@ class _CotizacionState extends State<Cotizacion> {
                       onChanged: (value) {
                         setStateDialog(() {
                           selectedDropdown = value ?? "";
-                          extraSeleccionado = extra_serv.firstWhere(
-                            (e) => e.IdExtra.toString() == selectedDropdown,
-                            orElse: () => ExtraServ(
-                              IdExtra: 0,
-                              Costo: 0,
-                              Descripcion: '',
-                              CantMin: 0,
-                              Nivel: 0,
-                              Tipo: 0,
-                              Unidad: '',
-                              Observaciones: '',
-                            ),
-                          );
+                          extraSeleccionado =
+                              extra_serv.firstWhere(
+                                    (e) =>
+                                        e.IdExtra.toString() ==
+                                        selectedDropdown,
+                                    orElse: () => ExtraServ(
+                                      IdExtra: 0,
+                                      Costo: 0,
+                                      Descripcion: '',
+                                      CantMin: 0,
+                                      Nivel: 0,
+                                      Tipo: 0,
+                                      Unidad: '',
+                                      Observaciones: '',
+                                    ),
+                                  )
+                                  as List<ExtraServ>;
                           // actualizar el TextFormField con CantMin
-                          cantMinController.text =
-                              extraSeleccionado?.CantMin.toString() ?? '';
-                          costoController.text =
-                              extraSeleccionado?.Costo.toString() ?? '';
-                          print(
-                            "🎯 Seleccionado: ${extraSeleccionado?.IdExtra}",
-                          );
-                          print("💰 Costo: ${extraSeleccionado?.Costo}");
-                          print("🧱 CantMin: ${extraSeleccionado?.CantMin}");
+                          cantMinController.text = extraSeleccionado[0].CantMin
+                              .toString();
+                          costoController.text = extraSeleccionado[0].Costo
+                              .toString();
                         });
                       },
                       decoration: const InputDecoration(
@@ -459,8 +541,6 @@ class _CotizacionState extends State<Cotizacion> {
             ),
             ElevatedButton(
               onPressed: () {
-                print('Tipo seleccionado: $selectedDropdown');
-                print('Cantidad ingresada: $inputValue');
                 final nuevoExtra = Extras(
                   concepto: selectedDropdown,
                   cantidad: 5,
@@ -521,7 +601,7 @@ class _CotizacionState extends State<Cotizacion> {
                   items: _plantas.map((Planta planta) {
                     return DropdownMenuItem<Planta>(
                       value: planta,
-                      child: Text(planta.nombre),
+                      child: Text(planta.planta),
                     );
                   }).toList(),
                   onChanged: (Planta? newValue) {
@@ -548,14 +628,19 @@ class _CotizacionState extends State<Cotizacion> {
                   onPressed: () async {
                     if (_cotizacionController.text.isNotEmpty) {
                       try {
+                        final int idCotizacion =
+                            int.tryParse(_cotizacionController.text) ?? 0;
                         final resultado = await api_service.fCotizacion(
-                          _cotizacionController.text,
+                          idCotizacion,
                         );
+                        final List<Cotizador> cotizaciones =
+                            resultado['cotizacion'];
+                        final List<Producto> productos = resultado['producto'];
                         if (resultado.isNotEmpty) {
-                          final cot = resultado.first;
+                          final cot = cotizaciones.first;
                           final plantaSeleccionada = _plantas.firstWhere(
                             (p) => p.id == cot.planta,
-                            orElse: () => Planta(id: '', nombre: ''),
+                            orElse: () => Planta(id: '', planta: ''),
                           );
                           print('☠️💀☠️ $cot');
                           setState(() {
@@ -836,6 +921,7 @@ class _CotizacionState extends State<Cotizacion> {
                   label: const Text('Agregar Extras'),
                   onPressed: _mostrarExtras,
                 ),
+
                 const SizedBox(height: 20),
                 ConstrainedBox(
                   constraints: BoxConstraints(
@@ -877,7 +963,7 @@ class _CotizacionState extends State<Cotizacion> {
               minimumSize: const Size(double.infinity, 50),
             ),
             onPressed: _enviarFormulario,
-            child: const Text('ENVIAR FORMULARIO'),
+            child: const Text('GUARDAR'),
           ),
         ),
       ),

@@ -24,6 +24,9 @@ class Pedido {
   final String Asesor;
   final String UsuarioCreo;
   final String Producto;
+  final String Descripcion;
+  final int activo;
+  final int VistoBueno;
 
   Pedido({
     required this.IdPedido,
@@ -51,6 +54,9 @@ class Pedido {
     required this.Asesor,
     required this.UsuarioCreo,
     required this.Producto,
+    required this.Descripcion,
+    required this.activo,
+    required this.VistoBueno,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
@@ -59,20 +65,20 @@ class Pedido {
           ? json['IdPedido']
           : int.tryParse(json['IdPedido']?.toString() ?? '0') ?? 0,
       Planta: parseString(json['Planta']),
-      IdCotizacion: json['IdCotizacion'] is int
-          ? json['IdCotizacion']
-          : int.tryParse(json['IdCotizacion']?.toString() ?? '0') ?? 0,
+      IdCotizacion: json['idCotizacion'] is int
+          ? json['idCotizacion']
+          : int.tryParse(json['idCotizacion']?.toString() ?? '0') ?? 0,
       NoObra: parseString(json['NoObra']),
       Obra: parseString(json['Obra']),
       NoCliente: parseString(json['NoCliente']),
-      Nombre: parseString(json['Nombre']),
+      Nombre: parseString(json['Cliente']),
       Pago: parseString(json['Pago']),
       PrecioProducto: parseDouble(json['PrecioProducto']),
       PrecioExtra: parseDouble(json['PrecioExtra']),
       Bomba: parseString(json['CodBomba']),
       PrecioBomba: parseDouble(json['PrecioBomba']),
       Elemento: parseString(json['Elemento']),
-      Cantidad: parseDouble(json['CantidadM3']),
+      Cantidad: parseDouble(json['M3']),
       FechaHoraPedido: json['FechaHoraPedido'] != null
           ? DateTime.parse(json['FechaHoraPedido'])
           : DateTime(2000), // o DateTime.now() o lo que definas como seguro
@@ -96,7 +102,24 @@ class Pedido {
       Asesor: parseString(json['Asesor']),
       UsuarioCreo: parseString(json['UsuarioCreo']),
       Producto: parseString(json['Producto']),
+      Descripcion: parseString(json['Descripcion']),
+      activo: json['activo'] is bool
+          ? (json['activo'] ? 1 : 0)
+          : json['activo'] is int
+          ? json['activo']
+          : int.tryParse(json['activo']?.toString() ?? '0') ?? 0,
+
+      VistoBueno: json['VistoBueno'] is bool
+          ? (json['VistoBueno'] ? 1 : 0)
+          : json['VistoBueno'] is int
+          ? json['VistoBueno']
+          : int.tryParse(json['VistoBueno']?.toString() ?? '0') ?? 0,
     );
+  }
+
+  @override
+  String toString() {
+    return 'Pedido(Pedido: $IdPedido, Planta: $Planta, NoCliente: $NoCliente, Cliente: $Nombre, idCotizacion: $IdCotizacion, Producto: $Producto, VB: $VistoBueno, Programado: $activo)';
   }
 }
 

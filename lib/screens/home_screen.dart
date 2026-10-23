@@ -2,11 +2,13 @@ import 'package:catsa/screens/Cotizador/cotizacion.dart';
 import 'package:catsa/screens/Pedidos/pedido_form.dart';
 import 'package:catsa/screens/Pedidos/pedido_linea.dart';
 import 'package:catsa/screens/QR/leerQR.dart';
-import 'package:catsa/service/notification_service.dart';
+import 'package:catsa/service/api.dart';
+//import 'package:catsa/service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
 import '../widgets/app_drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:catsa/service/apiLocal.dart' as api_local;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +19,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
+    await recargarPantalla();
     if (index == 0) {
       Navigator.push(
         context,
@@ -51,6 +54,37 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    verPlantasDebug();
+    verCotizacionLoc();
+  }
+
+  Future<void> verPlantasDebug() async {
+    await syncPlantas();
+
+    // final plantas = await getPlantas();
+
+    // for (final p in plantas) {
+    //   print('ID: ${p['id']} | Clave: ${p['clave']} | Planta: ${p['planta']}');
+    // }
+  }
+
+  Future<void> verCotizacionLoc() async {
+    try {
+      print('🏴‍☠️👻');
+      await api_local.getCotizaciones();
+      await api_local.getCotizacionesD();
+      await api_local.getCotizacionesDMP();
+      await api_local.getCotizacionesEx();
+    } catch (e) {
+      print('❌ ERROR getPlantas: $e');
+    }
+  }
+
+  Future<void> recargarPantalla() async {
+    print('🏴‍☠️🐦‍🔥🏴‍☠️');
+    await api_local.getCotizaciones();
+    await api_local.getCotizacionesD();
+    await api_local.getCotizacionesDMP();
   }
 
   @override

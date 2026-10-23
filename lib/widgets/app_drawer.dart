@@ -1,7 +1,40 @@
+import 'package:catsa/service/apiLocal.dart' as ApiLocal;
 import 'package:flutter/material.dart';
 import '../screens/Cotizador/cotizaciones.dart';
 import '../screens/Pedidos/pedidos.dart';
 import '../screens/login_screen.dart';
+
+Future<void> _cerrarSesion(BuildContext context) async {
+  final confirmar = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Cerrar sesión'),
+      content: const Text(
+        'Se eliminarán todas las cotizaciones y pedidos almacenados localmente que aún no hayan sido enviados. Esta acción no se puede deshacer.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Aceptar'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmar == true) {
+    await ApiLocal.borrarTodo();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => LoginScreen()),
+      (route) => false,
+    );
+  }
+}
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -40,10 +73,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             title: Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
-            onTap: () => Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => LoginScreen()),
-            ),
+            onTap: () => _cerrarSesion(context),
           ),
         ],
       ),

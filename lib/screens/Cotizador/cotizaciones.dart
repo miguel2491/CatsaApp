@@ -1,11 +1,11 @@
+import 'package:catsa/model/cotizacionLoc.dart';
 import 'package:catsa/model/planta.dart';
 import 'package:catsa/service/api.dart' as ApiService;
+import 'package:catsa/service/apiLocal.dart' as ApiLocal;
 import 'package:catsa/widgets/dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:catsa/core/app_color.dart';
 import 'package:intl/intl.dart';
-import '../../model/cotizador.dart';
-import '../../service/api.dart';
 
 class Cotizaciones extends StatefulWidget {
   const Cotizaciones({super.key});
@@ -22,7 +22,7 @@ class _CotizacionState extends State<Cotizaciones> {
   DateTime? _selectedEndDate;
   bool _loading = false;
   bool _isLoading = true;
-  List<Cotizador> _cotizaciones = [];
+  List<CotizacionLoc> _cotizaciones = [];
 
   @override
   void initState() {
@@ -35,7 +35,7 @@ class _CotizacionState extends State<Cotizaciones> {
       final plantas = await ApiService.fPlantas();
       setState(() {
         _plantas = plantas;
-        _plantasNombres = plantas.map((p) => p.nombre).toList();
+        _plantasNombres = plantas.map((p) => p.planta).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -88,12 +88,12 @@ class _CotizacionState extends State<Cotizaciones> {
     setState(() => _loading = true);
 
     try {
-      final cotizaciones = await fCotizaciones(
+      final cotizaciones = await ApiLocal.fLCotizaciones(
         planta: _selectedPlanta!,
         fechaInicio: _selectedStartDate!,
         fechaFin: _selectedEndDate!, // o ajusta si quieres rango
       );
-
+      print('👻🐦‍🔥');
       setState(() {
         _cotizaciones = cotizaciones;
         _loading = false;
@@ -104,6 +104,7 @@ class _CotizacionState extends State<Cotizaciones> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar pedidos: ${e.toString()}')),
       );
+      //await ApiLocal.eliminarCotizacion(1);
     }
   }
 
@@ -190,8 +191,8 @@ class _CotizacionState extends State<Cotizaciones> {
                       setState(() {
                         _selectedPlantaNombre = newValue;
                         final plantaSeleccionada = _plantas.firstWhere(
-                          (p) => p.nombre == newValue,
-                          orElse: () => Planta(id: '', nombre: ''),
+                          (p) => p.planta == newValue,
+                          orElse: () => Planta(id: '', planta: ''),
                         );
                         _selectedPlanta = plantaSeleccionada.id;
                       });
@@ -231,7 +232,7 @@ class _CotizacionState extends State<Cotizaciones> {
     if (_cotizaciones.isEmpty) {
       return const Center(
         child: Text(
-          'No hay pedidos con los filtros seleccionados',
+          'No hay Cotizaciones con los filtros seleccionados',
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       );
@@ -247,11 +248,11 @@ class _CotizacionState extends State<Cotizaciones> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
             title: Text(
-              '${p.idCotizacion != 0 ? p.idCotizacion : 'Sin Pedido'}',
+              '${p.id != 0 ? p.id : 'Sin Pedido'}',
               style: const TextStyle(color: Colors.white),
             ),
             subtitle: Text(
-              '${p.noObra} - ${p.obra}\n${p.planta} - ${p.cliente}',
+              '${p.noObra} - ${p.obra}\n${p.cliente} - ${p.enviado}',
               style: const TextStyle(color: Colors.white70),
             ),
             onTap: () {

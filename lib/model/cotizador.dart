@@ -6,6 +6,7 @@ class Cotizador {
   final String cliente;
   final String noObra;
   final String obra;
+  final String direccion;
   final String estatus;
 
   Cotizador({
@@ -16,6 +17,7 @@ class Cotizador {
     required this.cliente,
     required this.noObra,
     required this.obra,
+    required this.direccion,
     required this.estatus,
   });
 
@@ -30,12 +32,13 @@ class Cotizador {
       cliente: parseString(json['Cliente']),
       noObra: parseString(json['NoObra']),
       obra: parseString(json['Obra']),
+      direccion: parseString(json['Direccion']),
       estatus: parseString(json['Estatus']),
     );
   }
   @override
   String toString() {
-    return 'Cotizacion(id: $idCotizacion, planta: $planta, cliente: $cliente, nocliente: $noCliente, obra:$obra, noobra:$noObra)';
+    return 'Cotizacion(id: $idCotizacion, planta: $planta, cliente: $cliente, nocliente: $noCliente, obra:$obra, noobra:$noObra, direccion: $direccion)';
   }
 }
 

@@ -35,7 +35,7 @@ class PlantaDropdown extends StatelessWidget {
           items: plantas.map((planta) {
             return DropdownMenuItem<Planta>(
               value: planta,
-              child: Text(planta.nombre),
+              child: Text(planta.planta),
             );
           }).toList(),
           onChanged: onChanged,

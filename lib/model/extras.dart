@@ -18,6 +18,11 @@ class Extras {
   }
 
   @override
+  String toString() {
+    return 'SExtra(Concepto: $concepto, Cantidad: $cantidad Descripcion: $descripcion)';
+  }
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Extras &&
